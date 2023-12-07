@@ -297,5 +297,3 @@ struct PitchedPtr
         size_t stride[N];
         size_t size[N];
 };
-
-NWOB_NAMESPACE_END

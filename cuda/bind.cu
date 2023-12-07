@@ -2,6 +2,7 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 #include "common.h"
+#include <device_launch_parameters.h>
 
 __global__ void custom_cuda_kernel(float *a, float *b, float *c, int n)
 {
