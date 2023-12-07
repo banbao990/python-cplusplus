@@ -3,7 +3,7 @@
         {
             "name": "Windows",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/include",
                 "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.3/include",
                 "C:/Users/admin/anaconda3/envs/mi3/include",
                 "C:/Users/admin/anaconda3/envs/mi3/Lib/site-packages/torch/include",
