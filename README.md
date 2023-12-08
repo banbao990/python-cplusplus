@@ -2,7 +2,9 @@
 
 # mi3
 
-+ windows
+## windows
+
++ cuda
 
 ```bash
 nvcc --version  
@@ -13,7 +15,16 @@ nvcc --version
 # Build cuda_12.3.r12.3/compiler.33492891_0
 ```
 
-+ python 如下
++ optix
+
+```bash
+```
+
+
+
+
+
+## python
 
 ```bash
 # env
@@ -24,32 +35,60 @@ conda create -n mi3 python=3.10
 # pytorch
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
+# ninja
+pip install ninja
+```
+
++ python 其他
+
+```bash
 # mitsuba
 pip install mitsuba
 
-# imgui
+# glfw, imgui
 pip install imgui
-
-# glfw
 pip install glfw
 
-# opengl
+# opengl, cuda
 pip install PyOpenGL PyOpenGL_accelerate
+pip install cuda-python
+pip install pycuda # 会报错, 解决方案见下面
 
 # tinycudann
 git clone --recursive https://github.com/nvlabs/tiny-cuda-nn
 cd bindings/torch
 python setup.py install
 
-# matplotlib, tqdm, tensorboard
-pip install matplotlib
+# tqdm, tensorboard
 pip install tqdm
 pip install tensorboard
 
 # torch_scatter
 pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-2.1.0+cu121.html
 
-# ninja
-pip install ninja
+# yacs, matplotlib, openexr, opencv
+pip install yacs
+pip install matplotlib
+pip install OpenEXR
+pip install opencv-python
 ```
+
+
+
+### cuda 问题
+
++ 直接 `pip install pycuda` 报错
+  +  `PyCUDA was compiled without GL extension support`
++ [解决方案](https://github.com/harskish/ganspace/issues/43)
+
+```txt
+I've actually fixed this one. If you are on a windows device, you should pip install pipwin, then use pipwin to install pycuda. And then it installs it correctly.
+```
+
+```bash
+pip install pipwin
+pipwin install pycuda
+```
+
+
 
