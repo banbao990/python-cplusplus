@@ -3,7 +3,6 @@ from torch.utils.cpp_extension import load
 from glob import glob
 import os
 import numpy as np
-import ninja
 
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2 as cv
@@ -11,21 +10,23 @@ import cv2 as cv
 from config import _C as cfg
 
 def compile():
-    # remove /showIncludes flag from nvcc flags
     os.environ['PATH'] = os.environ['PATH'] + ";" + cfg.CL_PATH
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
     Debug = False # compile with debug flag
     verbose = True # show compile command
-    cuda_files = glob("bind.cpp") # source files # TODO:many cpp files
+    cpp_files = glob("bind.cpp") # source files # TODO: how to deal with many cpp files
     include_dirs = ["../include"] # include directories
     include_dirs.append(cfg.OPTIX_INCLUDE_PATH)
     include_dirs.append(cfg.CUDA_INCLUDE_PATH)
 
-    cflags = ["--extended-lambda --expt-relaxed-constexpr"] # nvcc flags
+    cflags = []
+    # cflags.append("--extended-lambda --expt-relaxed-constexpr") # nvcc flags
     if Debug:
-        cflags.append("-G -g -O0")
+        # cflags.append("-G -g -O0")
+        cflags.extend(["/DEBUG:FULL", "/Od"])
     else:
-        cflags.append("-O3")
+        # cflags.append("-O3")
+        cflags.extend(["/DEBUG:NONE", "/O2"])
 
     # link flags
     ldflags = ["/NODEFAULTLIB:LIBCMT"]
@@ -35,7 +36,7 @@ def compile():
 
     demo = load(
         name="pytorch_optix_demo", # name can not have '-'
-        sources=cuda_files,
+        sources=cpp_files,
         extra_include_paths=include_dirs,  
         extra_cflags=cflags,
         extra_ldflags=ldflags,
@@ -44,7 +45,6 @@ def compile():
     )
 
     return demo
-
 
 def read_exr(path: str) -> torch.Tensor:
     """
@@ -61,11 +61,10 @@ def read_exr(path: str) -> torch.Tensor:
 if __name__ == "__main__":
 
     demo = compile()
-    
 
     # read exr image and convert to torch tensor, get first 3 channels
-    img_with_noise = read_exr("images/100spp.exr")
-    print(img_with_noise.shape)
+    img_with_noise = read_exr("../../assets/images/100spp.exr")
+    print("original image size: {}".format(img_with_noise.shape))
 
     window_names = ["image with noise", "image clean"]
 

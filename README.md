@@ -1,6 +1,6 @@
 # python-cplucplus
 
-# mi3
+# mi3 环境
 
 ## windows
 
@@ -25,6 +25,8 @@ nvcc --version
 
 ## python
 
++ 只需要如下配置，即可执行本工程中的代码
+
 ```bash
 # env
 conda create -n mi3 python=3.10
@@ -38,7 +40,11 @@ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvi
 pip install ninja opencv-python yacs
 ```
 
-+ python 其他
+
+
+## 其他
+
++ mi 环境中的其他库
 
 ```bash
 # mitsuba

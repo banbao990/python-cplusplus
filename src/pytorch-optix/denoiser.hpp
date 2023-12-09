@@ -48,6 +48,8 @@ public:
                                void *);
 };
 
+///////////////////////////////////////////////////////////////////////////////
+
 Denoiser *Denoiser::get_instance() {
     static Denoiser s_instance;
     return &s_instance;
@@ -58,17 +60,22 @@ Denoiser::Denoiser() {
 }
 
 Denoiser::~Denoiser() {
-    if (m_denoiser != nullptr) {
-        OPTIX_CHECK(optixDenoiserDestroy(m_denoiser));
-    }
+    try {
+        if (m_denoiser != nullptr) {
+            OPTIX_CHECK(optixDenoiserDestroy(m_denoiser));
+        }
 
-    if (m_initialized) {
-        OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));
-        CUDA_CHECK(cudaStreamDestroy(m_stream));
+        if (m_initialized) {
+            OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));
+            CUDA_CHECK(cudaStreamDestroy(m_stream));
+        }
+    } catch (const std::exception &e) {
+        MI_LOG_E("Error when destroying denoiser: %s\n", e.what());
+    } catch (...) {
+        MI_LOG_E("Error when destroying denoiser: unknown error\n");
     }
 }
 
-// TODO: why we cannot put init() in constructor?
 void Denoiser::init() {
     if (m_initialized) {
         return;
