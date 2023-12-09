@@ -21,6 +21,8 @@
 #include <optix_stubs.h>
 #include <sstream>
 #include <stdexcept>
+#include <vector_types.h>
+#include <cuda_runtime.h>
 
 #ifdef __INTELLISENSE__
 // just for MSVS's intelligence
@@ -63,4 +65,19 @@
         }                                                                                                \
     }
 
-#define OUTPUT_LINE fprintf(stderr, "[Info] lines: %d\n", __LINE__);
+#define MI_LOG_ERROR(msg) fprintf(stderr, "[Error] %s\n", msg);
+#define MI_LOG_INFO(msg) fprintf(stdout, "[Info] %s\n", msg);
+
+#define MI_LOG(format, ...) fprintf(stdout, format, __VA_ARGS__)
+#define MI_LOG_E(format, ...) fprintf(stderr, format, __VA_ARGS__)
+
+#define MI_OUTPUT_LINE fprintf(stderr, "[Info] lines: %d\n", __LINE__);
+
+// math
+bool operator==(const int3 &a, const int3 &b) {
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+bool operator!=(const int3 &a, const int3 &b) {
+    return !(a == b);
+}

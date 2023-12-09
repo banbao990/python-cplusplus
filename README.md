@@ -18,9 +18,8 @@ nvcc --version
 + optix
 
 ```bash
+# SDK 8.0.0
 ```
-
-
 
 
 
@@ -35,8 +34,8 @@ conda create -n mi3 python=3.10
 # pytorch
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
-# ninja
-pip install ninja
+# ninja, opencv, yacs
+pip install ninja opencv-python yacs
 ```
 
 + python 其他
@@ -66,11 +65,9 @@ pip install tensorboard
 # torch_scatter
 pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-2.1.0+cu121.html
 
-# yacs, matplotlib, openexr, opencv
-pip install yacs
+# matplotlib, openexr
 pip install matplotlib
 pip install OpenEXR
-pip install opencv-python
 ```
 
 
