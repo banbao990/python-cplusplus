@@ -165,11 +165,6 @@ void Denoiser::resize_optix_denoiser(const int3 size) {
     m_denoiser_state = torch::empty(denoiser_state_size, tensor_options);
 
     // ------------------------------------------------------------------
-    // resize our cuda frame buffer
-    tensor_options = tensor_options.dtype(torch::kFloat32);
-    m_denoised_img = torch::empty({height, width, int(element_size / sizeof(float))}, tensor_options);
-
-    // ------------------------------------------------------------------
     OPTIX_CHECK(
         optixDenoiserSetup(m_denoiser, 0,
                            width, height,
