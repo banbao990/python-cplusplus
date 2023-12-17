@@ -13,7 +13,7 @@ class Denoiser {
 private:
     bool m_initialized = false;
 
-    CUstream m_stream = nullptr;
+    // CUstream m_stream = nullptr;
     cudaDeviceProp m_device_props = {};
     CUcontext m_cuda_context = nullptr;
     OptixDeviceContext m_optix_context = nullptr;
@@ -67,7 +67,7 @@ Denoiser::~Denoiser() {
 
         if (m_initialized) {
             OPTIX_CHECK(optixDeviceContextDestroy(m_optix_context));
-            CUDA_CHECK(cudaStreamDestroy(m_stream));
+            // CUDA_CHECK(cudaStreamDestroy(m_stream));
         }
     } catch (const std::exception &e) {
         MI_LOG_E("Error when destroying denoiser: %s\n", e.what());
@@ -92,7 +92,7 @@ void Denoiser::init() {
     // create context
     const int deviceID = 0;
     CUDA_CHECK(cudaSetDevice(deviceID));
-    CUDA_CHECK(cudaStreamCreate(&m_stream));
+    // CUDA_CHECK(cudaStreamCreate(&m_stream));
 
     cudaGetDeviceProperties(&m_device_props, deviceID);
     MI_LOG("[Info] optix version: %d\n", OPTIX_VERSION);

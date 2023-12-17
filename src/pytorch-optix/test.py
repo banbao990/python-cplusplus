@@ -79,7 +79,7 @@ if __name__ == "__main__":
         sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
         print("image size: {}".format(sub_image.shape))
 
-        image_clean = demo.optix_denoiser(sub_image)
+        image_clean = demo.optix_denoise(sub_image)
 
         cv.imshow(window_names[0], sub_image.cpu().numpy())
         cv.imshow(window_names[1], image_clean.cpu().numpy())

@@ -17,7 +17,7 @@ LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo
 
 static bool s_initialized = false;
 
-torch::Tensor optix_denoiser(const torch::Tensor &img_with_noise) {
+torch::Tensor optix_denoise(const torch::Tensor &img_with_noise) {
     const int height = img_with_noise.size(0);
     const int width = img_with_noise.size(1);
     const int element_size = img_with_noise.size(2) * sizeof(float);
@@ -37,7 +37,7 @@ torch::Tensor optix_denoiser(const torch::Tensor &img_with_noise) {
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("optix_denoiser",
-          &optix_denoiser,
-          "example for pytorch optix extension");
+    m.def("optix_denoise",
+          &optix_denoise,
+          "optix denoiser example");
 }
