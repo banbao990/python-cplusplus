@@ -4,7 +4,7 @@ import os
 _C = CN()
 
 # _C.CL_PATH = r"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/bin/Hostx86/x86"
-_C.CL_PATH = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/bin/Hostx64/x64"
+_C.CL_PATH = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64"
 
 # can be read from environment variable
 _C.OPTIX_SDK_PATH = ""

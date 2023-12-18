@@ -4,7 +4,7 @@ from glob import glob
 import os
 
 # CL_PATH = r"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/bin/Hostx86/x86"
-CL_PATH = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/bin/Hostx64/x64"
+CL_PATH = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64"
 print("add your 'cl.exe' to path, example:\n\t{}".format(CL_PATH))
 os.environ['PATH'] = os.environ['PATH'] + ";" + CL_PATH
 
