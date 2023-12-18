@@ -1,5 +1,12 @@
 build
-.vscode/
+.vscode
 __pycache__
 log.txt
-.vs/
+.vs
+out
+dist
+*.egg-info
+
+src/python-cpp-oidn/oidn
+
+assets/images/a.png

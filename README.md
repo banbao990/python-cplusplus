@@ -37,7 +37,7 @@ conda create -n mi3 python=3.10
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
 # ninja, opencv, yacs
-pip install ninja opencv-python yacs
+pip install ninja opencv-python yacs pybind11
 ```
 
 
