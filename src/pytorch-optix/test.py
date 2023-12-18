@@ -1,11 +1,16 @@
 import torch
+import torch.nn.functional as F
 from torch.utils.cpp_extension import load
 from glob import glob
 import os
 import numpy as np
+from typing import Tuple
+import torchvision
+import sys
 
-os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
-import cv2 as cv
+# add module path
+sys.path.append("../")
+from utils.images import *
 
 from config import _C as cfg
 
@@ -46,29 +51,22 @@ def compile():
 
     return demo
 
-def read_exr(path: str) -> torch.Tensor:
-    """
-    Read exr image and convert to torch tensor.
-    """
-
-    img = cv.imread(path, cv.IMREAD_UNCHANGED)
-    img = torch.from_numpy(img)
-    img = img.to(torch.float32)
-    img = img.to("cuda")
-    return img
-   
 # main function
 if __name__ == "__main__":
 
     demo = compile()
 
     # read exr image and convert to torch tensor, get first 3 channels
+    # img_with_noise = gen_noise((720, 720), 1000, True)
     img_with_noise = read_exr("../../assets/images/100spp.exr")
+    # img_with_noise = read_png("../../assets/images/a.png")
+    # img_with_noise_tm = read_exr("../../assets/images/100spp-tm.exr")
     print("original image size: {}".format(img_with_noise.shape))
 
-    window_names = ["image with noise", "image clean"]
+    window_names = ["image with noise", "image clean", "image with noise(tm)", "image clean(tm)"]
 
-    for i in range(5):
+    crops = 5
+    for i in range(crops):
         # generate random crop of image_with_noise_original
         SEG = 300
         x_start = np.random.randint(0, max(img_with_noise.shape[0] - SEG, 0))
@@ -77,12 +75,19 @@ if __name__ == "__main__":
         y_end = np.random.randint(min(y_start + SEG, img_with_noise.shape[1]), img_with_noise.shape[1])
 
         sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
+
         print("image size: {}".format(sub_image.shape))
 
         image_clean = demo.optix_denoise(sub_image)
 
-        cv.imshow(window_names[0], sub_image.cpu().numpy())
-        cv.imshow(window_names[1], image_clean.cpu().numpy())
+        # sub_image_tm = img_with_noise_tm[x_start:x_end, y_start:y_end, :].clone()
+        # image_clean_tm = demo.optix_denoise(sub_image_tm)
+
+        cv.imshow(window_names[0], tonemap_aces(sub_image).cpu().numpy())
+        cv.imshow(window_names[1], tonemap_aces(image_clean).cpu().numpy())
+        # the following methods are not recommended, because denoiser must be trained with original images(linear space)
+        # cv.imshow(window_names[2], sub_image_tm.cpu().numpy())
+        # cv.imshow(window_names[3], (image_clean_tm).cpu().numpy())
         
         if(cv.waitKey(0)):
             cv.destroyAllWindows()

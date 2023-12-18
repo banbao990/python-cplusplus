@@ -258,6 +258,7 @@ torch::Tensor Denoiser::denoise(const torch::Tensor &img_with_noise) {
                                     m_denoiser_scratch.data_ptr(),
                                     s_denoiser_scratch_size));
 #endif
+    // MI_LOG("%lu\n", (unsigned long)img_with_noise.data_ptr());
     return m_denoised_img;
 }
 
