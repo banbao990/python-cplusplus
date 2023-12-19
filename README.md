@@ -5,6 +5,13 @@ git clone git@github.com:banbao990/python-cplusplus.git
 git submodule update --init --recursive
 ```
 
++ <span style="color:red">MUST DO THIS</span>
+```bash
+python prepare.py
+# if complies error, do the following cmd instead
+# python prepare.py --clean --all
+```
+
 # mi3 环境
 
 ## windows

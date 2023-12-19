@@ -7,7 +7,6 @@ out
 dist
 *.egg-info
 *pyd
-
-src/python-cpp-oidn/oidn
+src/**/pybind11
 
 assets/images/a.png
