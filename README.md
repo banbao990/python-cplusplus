@@ -92,6 +92,9 @@ pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-
 # matplotlib, openexr
 pip install matplotlib
 pip install OpenEXR
+
+# oidn (CPU version)
+pip install oidn
 ```
 
 

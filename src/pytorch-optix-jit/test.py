@@ -9,7 +9,8 @@ import torchvision
 import sys
 
 # add module path
-sys.path.append("../")
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append("{}/../".format(CURRENT_DIR))
 from utils.images import *
 
 from config import _C as cfg
@@ -19,8 +20,9 @@ def compile():
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
     Debug = False # compile with debug flag
     verbose = True # show compile command
-    cpp_files = glob("bind.cpp") # source files # TODO: how to deal with many cpp files
-    include_dirs = ["../include"] # include directories
+    cpp_files = glob("bind.cpp", root_dir=CURRENT_DIR) # source files # TODO: how to deal with many cpp files
+    cpp_files = [os.path.join(CURRENT_DIR, file) for file in cpp_files]
+    include_dirs = [os.path.join(CURRENT_DIR, "../include")] # include directories
     include_dirs.append(cfg.OPTIX_INCLUDE_PATH)
     include_dirs.append(cfg.CUDA_INCLUDE_PATH)
 
@@ -58,9 +60,9 @@ if __name__ == "__main__":
 
     # read exr image and convert to torch tensor, get first 3 channels
     # img_with_noise = gen_noise((720, 720), 1000, True)
-    img_with_noise = read_exr("../../assets/images/100spp.exr")
-    # img_with_noise = read_png("../../assets/images/a.png")
-    # img_with_noise_tm = read_exr("../../assets/images/100spp-tm.exr")
+    img_with_noise = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
+    # img_with_noise = read_png(os.path.join(CURRENT_DIR, "../../assets/images/cbox.png"))
+    # img_with_noise_tm = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp-tm.exr"))
     print("original image size: {}".format(img_with_noise.shape))
 
     window_names = ["image with noise", "image clean", "image with noise(tm)", "image clean(tm)"]

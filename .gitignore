@@ -8,5 +8,6 @@ dist
 *.egg-info
 *pyd
 src/**/pybind11
+src/cmake-oidn/oidn
 
 assets/images/a.png
