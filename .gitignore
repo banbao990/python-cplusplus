@@ -6,6 +6,7 @@ log.txt
 out
 dist
 *.egg-info
+*pyd
 
 src/python-cpp-oidn/oidn
 

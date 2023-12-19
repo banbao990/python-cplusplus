@@ -11,5 +11,5 @@ from utils.clean import clean_build_and_uninstall
 # os.system("pip install .")
 
 if __name__ == "__main__":
-    lib_name = "python_example"
-    clean_build_and_uninstall(lib_name)
+    LIB_NAME = "cmake_example"
+    clean_build_and_uninstall(LIB_NAME)

@@ -5,11 +5,22 @@ import shutil
 import glob
 
 def clean_build():
-    to_delete = ["src/**/build", "src/**/__pycache__"]
+    to_delete = [
+        "src/**/build", "src/**/__pycache__", "src/**/dist",
+    ]
     for i in to_delete:
-        build_dirs = glob.glob(i, recursive=True)
-        for build_dir in build_dirs:
-            shutil.rmtree(build_dir)
+        file = glob.glob(i, recursive=True)
+        for file in file:
+            if os.path.isdir(file):
+                shutil.rmtree(file)
+            else:
+                os.remove(file)
+
+    # find all clean_and_restore.py files and run them
+    clean_and_restore_files = glob.glob("src/**/clean_and_restore.py",
+                                        recursive=True)
+    for clean_and_restore_file in clean_and_restore_files:
+        os.system("python {}".format(clean_and_restore_file))
 
 if __name__ == "__main__":
     clean_build()

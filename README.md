@@ -1,5 +1,10 @@
 # python-cplucplus
 
+```
+git clone git@github.com:banbao990/python-cplusplus.git
+git submodule update --init --recursive
+```
+
 # mi3 环境
 
 ## windows
@@ -21,6 +26,12 @@ nvcc --version
 # SDK 8.0.0
 ```
 
++ cmake
+
+```bash
+cmake --version
+# cmake version 3.25.1
+```
 
 
 ## python
