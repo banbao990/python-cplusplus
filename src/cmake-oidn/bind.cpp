@@ -26,10 +26,21 @@ void denoise(torch::Tensor color, torch::Tensor output, int width, int height, i
     oidn_denoiser->denoise((float *)color.data_ptr(), (float *)output.data_ptr(), width, height, channels);
 }
 
+void denoise_with_normal_and_albedo(torch::Tensor color, torch::Tensor normal, torch::Tensor albedo, torch::Tensor output, int width, int height, int channels) {
+    if (channels > 3 || channels < 1) {
+        std::cerr << "[Error] Oidn only supports up to 3 channels" << std::endl;
+        return;
+    }
+
+    OidnDenoiser *oidn_denoiser = OidnDenoiser::get_instance();
+    oidn_denoiser->denoise((float *)color.data_ptr(), (float *)normal.data_ptr(), (float *)albedo.data_ptr(), (float *)output.data_ptr(), width, height, channels);
+}
+
 PYBIND11_MODULE(oidn_example, m) {
     m.doc() = "pybind11 oidn plugin";  // optional module docstring
     m.def("init", &init, "Initialize oidn denoiser");
     m.def("denoise", &denoise, "Denoise image");
+    m.def("denoise_with_normal_and_albedo", &denoise_with_normal_and_albedo, "Denoise image with normal and albedo");
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

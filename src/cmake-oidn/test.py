@@ -1,12 +1,16 @@
-# for oidn_example
 import os
-os.add_dll_directory(R"{}\oidn\oidn-2.1.0.x64.windows\bin".format(os.path.dirname(os.path.abspath(__file__))))
+import sys
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if sys.platform == "win32":
+    os.add_dll_directory(R"{}\oidn\oidn-2.1.0.x64.windows\bin".format(CURRENT_DIR))
+elif sys.platform == "linux":
+    os.add_dll_directory(R"{}\oidn\oidn-2.1.0.x86_64.linux\bin".format(CURRENT_DIR))
 
 # for utils
-import sys
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append("{}/../".format(path))
 from utils.images import read_exr, tonemap_aces, read_png
+from utils.pfm import read_pfm, write_pfm
 
 import oidn_example
 
@@ -15,38 +19,83 @@ import numpy as np
 import torch
 import ctypes
 
+def pfm_test():
+    NAME = "cbox"
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append("{}/../".format(CURRENT_DIR))
+    # read png
+    img = cv.imread(os.path.join(CURRENT_DIR, "../../assets/images/{}.png".format(NAME)))
+    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    # vertival flip
+    img = np.flipud(img)
+    img = np.array(img, dtype=np.float32)/255.0
 
-oidn_example.init()
+    # little endian
+    write_pfm(os.path.join(CURRENT_DIR, "../../assets/images/{}.pfm".format(NAME)), img, 1, '<')
 
-# img_with_noise = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
-img_with_noise = read_png(os.path.join(CURRENT_DIR, "../../assets/images/cbox.png"))
-# only use first 3 channels
-if img_with_noise.shape[2] > 3:
-    img_with_noise = img_with_noise[:, :, :3]
+    # big endian
+    img = img.byteswap()
+    write_pfm(os.path.join(CURRENT_DIR, "../../assets/images/{}-b.pfm".format(NAME)), img, 1, '>')
 
-print("original image size: {}".format(img_with_noise.shape))
+def test_oidn():
+    oidn_example.init()
 
-crops = 5
-for i in range(crops):
-    # generate random crop of image_with_noise_original
-    SEG = 300
-    x_start = np.random.randint(0, max(img_with_noise.shape[0] - SEG, 0))
-    x_end = np.random.randint(min(x_start + SEG, img_with_noise.shape[0]), img_with_noise.shape[0])
-    y_start = np.random.randint(0, max(img_with_noise.shape[1] - SEG, 0))
-    y_end = np.random.randint(min(y_start + SEG, img_with_noise.shape[1]), img_with_noise.shape[1])
+    img_normal = None
+    img_albedo = None
+    # img_with_noise = read_png(os.path.join(CURRENT_DIR, "../../assets/images/cbox.png"))
 
-    sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
-    image_clean = torch.zeros_like(sub_image).to("cuda")
+    img_with_noise = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
+    img_normal = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/normal.exr"))
+    img_normal = (img_normal * 2.0 - 1.0).clamp(-1.0, 1.0)
+    img_albedo = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/albedo.exr"))
 
-    print("image size: {}".format(sub_image.shape))
+    # only use first 3 channels
+    if img_with_noise.shape[2] > 3:
+        img_with_noise = img_with_noise[:, :, :3]
+    if img_normal != None and img_normal.shape[2] > 3:
+        img_normal = img_normal[:, :, :3]
+    if img_albedo != None and img_albedo.shape[2] > 3:
+        img_albedo = img_albedo[:, :, :3]
 
-    oidn_example.denoise(sub_image, image_clean, sub_image.shape[1], sub_image.shape[0], sub_image.shape[2])
+    print("original image size: {}".format(img_with_noise.shape))
 
-    cv.imshow("noise", tonemap_aces(sub_image).cpu().numpy())
-    cv.imshow("denoised", tonemap_aces(image_clean).cpu().numpy())
-    
-    if(cv.waitKey(0)):
-        cv.destroyAllWindows()
+    xxyy = []
+    crops = 5
+    for i in range(crops):
+        # generate random crop of image_with_noise_original
+        SEG = 300
+        x_start = np.random.randint(0, max(img_with_noise.shape[0] - SEG, 0))
+        x_end = np.random.randint(min(x_start + SEG, img_with_noise.shape[0]), img_with_noise.shape[0])
+        y_start = np.random.randint(0, max(img_with_noise.shape[1] - SEG, 0))
+        y_end = np.random.randint(min(y_start + SEG, img_with_noise.shape[1]), img_with_noise.shape[1])
+
+        xxyy.append([x_start, x_end, y_start, y_end])
+
+    # whole img
+    xxyy.insert(0, [0, img_with_noise.shape[0], 0, img_with_noise.shape[1]])
+
+    for i in xxyy:
+        x_start, x_end, y_start, y_end = i
+        sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
+
+        print("image size: {}".format(sub_image.shape))
+
+        image_clean = torch.zeros_like(sub_image).to("cuda")
+        oidn_example.denoise(sub_image, image_clean, sub_image.shape[1], sub_image.shape[0], sub_image.shape[2])
+
+        if img_normal != None:
+            image_clean_aux = torch.zeros_like(sub_image).to("cuda")
+            img_normal_aux = img_normal[x_start:x_end, y_start:y_end, :].clone()
+            img_albedo_aux = img_albedo[x_start:x_end, y_start:y_end, :].clone()
+            oidn_example.denoise_with_normal_and_albedo(sub_image, img_normal_aux, img_albedo_aux, image_clean_aux, sub_image.shape[1], sub_image.shape[0], sub_image.shape[2])
+
+        cv.imshow("noise", tonemap_aces(sub_image).cpu().numpy())
+        cv.imshow("denoised", tonemap_aces(image_clean).cpu().numpy())
+
+        if img_normal != None:
+            cv.imshow("denoised(aux)", tonemap_aces(image_clean_aux).cpu().numpy())
+        
+        if(cv.waitKey(0)):
+            cv.destroyAllWindows()
+
+if __name__ == "__main__":
+    test_oidn()
