@@ -1,3 +1,8 @@
 import os
-os.system("pip install -e .")  # gen *.pyd at . location
-# os.system("pip install .")
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# gen *.pyd at . location
+cmd = "pip install -e {}".format(CURRENT_DIR)
+# cmd = "pip install {}".format(CURRENT_DIR)
+
+os.system(cmd)

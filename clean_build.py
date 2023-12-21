@@ -6,7 +6,7 @@ import glob
 
 def clean_build():
     to_delete = [
-        "src/**/build", "src/**/__pycache__", "src/**/dist",
+        "src/**/build", "src/**/__pycache__", "src/**/dist", "build", "src/**/*.egg-info"
     ]
     for i in to_delete:
         file = glob.glob(i, recursive=True)

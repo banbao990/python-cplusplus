@@ -12,33 +12,41 @@ python prepare.py
 # python prepare.py --clean --all
 ```
 
+
+
 # mi3 环境
 
-## windows
+## 例子
 
-+ cuda
+|        module         |    window    |    Linux     |   备注   |
+| :-------------------: | :----------: | :----------: | :------: |
+|   pytorch-cuda-jit    | $\checkmark$ | $\checkmark$ | 直接执行 |
+|   pytorch-optix-jit   | $\checkmark$ | $\checkmark$ | 直接执行 |
+| python-cpp-setuptools | $\checkmark$ | $\checkmark$ | 安装执行 |
+|   python-cpp-cmake    | $\checkmark$ | $\checkmark$ | 安装执行 |
+|      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行 |
 
-```bash
-nvcc --version  
-# nvcc: NVIDIA (R) Cuda compiler driver
-# Copyright (c) 2005-2023 NVIDIA Corporation
-# Built on Fri_Nov__3_17:51:05_Pacific_Daylight_Time_2023
-# Cuda compilation tools, release 12.3, V12.3.103
-# Build cuda_12.3.r12.3/compiler.33492891_0
-```
-
-+ optix
-
-```bash
-# SDK 8.0.0
-```
-
-+ cmake
++ 测试环境
+  + windows
+    + cuda 12.3、optix SDK 8.0.0、cmake 3.25.1
+  + linux
+    + cuda 12.1、optix SDK 8.0.0、cmake 3.25.1
++ 直接执行（例子）
 
 ```bash
-cmake --version
-# cmake version 3.25.1
+python src/pytorch-cuda-jit/test.py
 ```
+
++ 安装执行（例子）
+
+```bash
+# install
+python src/python-cpp-setuptools/install.py
+# run
+python src/python-cpp-setuptools/test.py
+```
+
+
 
 
 ## python
@@ -101,6 +109,8 @@ pip install oidn
 
 ### cuda 问题
 
+#### windows
+
 + 直接 `pip install pycuda` 报错
   +  `PyCUDA was compiled without GL extension support`
 + [解决方案](https://github.com/harskish/ganspace/issues/43)
@@ -115,4 +125,8 @@ pipwin install pycuda
 ```
 
 
+
+#### linux
+
++ [教程](https://wiki.tiker.net/PyCuda/Installation/Linux/)
 

@@ -23,9 +23,9 @@ if(WIN32)
 elseif(UNIX)
     # warning: not tested
     message(WARNING, "warning: not tested")
-    set(oidn_home "oidn/oidn-2.1.0.x86_64.linux")
+    set(oidn_home "${CMAKE_CURRENT_SOURCE_DIR}/oidn/oidn-2.1.0.x86_64.linux")
     target_include_directories(${proj_name} PUBLIC ${oidn_home}/include)
-    target_link_libraries(${proj_name} PUBLIC ${oidn_home}/lib/libOpenImageDenoise_device_cuda.so.2.1.0)
+    target_link_libraries(${proj_name} PUBLIC ${oidn_home}/lib/libOpenImageDenoise.so.2.1.0)
 endif()
 
 target_compile_definitions(${proj_name}

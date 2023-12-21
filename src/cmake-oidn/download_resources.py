@@ -6,7 +6,8 @@ import tarfile
 import shutil
 import argparse
 
-OIDN_DIR = "oidn"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+OIDN_DIR = os.path.join(CURRENT_DIR, "oidn")
 
 # download libs
 def download_libs():

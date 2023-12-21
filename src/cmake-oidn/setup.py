@@ -72,6 +72,10 @@ class CMakeBuild(build_ext):
 
         torch_libs = ["c10.lib", "torch_cpu.lib", "torch.lib", "torch_python.lib"]
         torch_libs.extend(["cudart_static.lib", "cuda.lib"]) # cuda libs
+        if sys.platform == "win32":
+            pass
+        elif sys.platform == "linux":
+            torch_libs = [x.replace(".lib", "") for x in torch_libs]
         cmake_args += [f"-DTORCH_LIBS={';'.join(torch_libs)}"]
 
         if self.compiler.compiler_type != "msvc":

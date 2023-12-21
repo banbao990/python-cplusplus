@@ -16,7 +16,7 @@ from utils.images import *
 from config import _C as cfg
 
 def compile():
-    os.environ['PATH'] = os.environ['PATH'] + ";" + cfg.CL_PATH
+    os.environ['PATH'] = os.environ['PATH'] + os.pathsep + cfg.CL_PATH
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
     Debug = False # compile with debug flag
     verbose = True # show compile command
@@ -25,21 +25,34 @@ def compile():
     include_dirs = [os.path.join(CURRENT_DIR, "../include")] # include directories
     include_dirs.append(cfg.OPTIX_INCLUDE_PATH)
     include_dirs.append(cfg.CUDA_INCLUDE_PATH)
+    print(include_dirs)
 
+    # compile flags
     cflags = []
     # cflags.append("--extended-lambda --expt-relaxed-constexpr") # nvcc flags
-    if Debug:
-        # cflags.append("-G -g -O0")
-        cflags.extend(["/DEBUG:FULL", "/Od"])
-    else:
-        # cflags.append("-O3")
-        cflags.extend(["/DEBUG:NONE", "/O2"])
 
     # link flags
-    ldflags = ["/NODEFAULTLIB:LIBCMT"]
-    ldflags.append("/LIBPATH:{}/lib/x64/".format(cfg.CUDA_PATH))
-    ldflags.append('cuda.lib')
-    ldflags.append('cudart_static.lib')
+    ldflags = []
+
+    if sys.platform == "win32":
+        if Debug:
+            cflags.extend(["/DEBUG:FULL", "/Od"])
+        else:
+            cflags.extend(["/DEBUG:NONE", "/O2"])
+    elif sys.platform == "linux":
+        if Debug:
+            cflags.append("-G -g -O0")
+        else:
+            cflags.append("-O3")
+
+    if sys.platform == "win32":
+        ldflags.append("/NODEFAULTLIB:LIBCMT")
+        ldflags.append("/LIBPATH:{}/lib/x64/".format(cfg.CUDA_PATH))
+        ldflags.append('cuda.lib')
+        ldflags.append('cudart_static.lib')
+    elif sys.platform == "linux":
+        ldflags.append("-L{}/lib64/stubs/".format(cfg.CUDA_PATH))
+        ldflags.append("-lcuda")
 
     demo = load(
         name="pytorch_optix_demo", # name can not have '-'

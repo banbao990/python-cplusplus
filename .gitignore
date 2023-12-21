@@ -6,6 +6,7 @@ log.txt
 out
 dist
 *.egg-info
+*.so
 *pyd
 src/**/pybind11
 src/cmake-oidn/oidn

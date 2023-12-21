@@ -1,14 +1,22 @@
 import os
 import sys
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+BIN_DIR = ""
 if sys.platform == "win32":
-    os.add_dll_directory(R"{}\oidn\oidn-2.1.0.x64.windows\bin".format(CURRENT_DIR))
+    BIN_DIR = "{}/oidn/oidn-2.1.0.x64.windows/bin".format(CURRENT_DIR)
 elif sys.platform == "linux":
-    os.add_dll_directory(R"{}\oidn\oidn-2.1.0.x86_64.linux\bin".format(CURRENT_DIR))
+    BIN_DIR = "{}/oidn/oidn-2.1.0.x86_64.linux/lib".format(CURRENT_DIR)
+
+if os.name == "nt":
+    os.add_dll_directory(BIN_DIR)
+elif os.name == "posix":
+    os.environ["PATH"] += os.pathsep + BIN_DIR
+    os.environ["LD_LIBRARY_PATH"] += os.pathsep + BIN_DIR
+    sys.path.append(BIN_DIR)
 
 # for utils
-path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append("{}/../".format(path))
+sys.path.append("{}/../".format(CURRENT_DIR))
 from utils.images import read_exr, tonemap_aces, read_png
 from utils.pfm import read_pfm, write_pfm
 

@@ -66,7 +66,8 @@
     }
 
 #define MI_LOG_ERROR(msg) fprintf(stderr, "[Error] %s\n", msg);
-#define MI_LOG_E(format, ...) fprintf(stderr, format, __VA_ARGS__)
+// ## for zero-argument case
+#define MI_LOG_E(format, ...) fprintf(stderr, format, ##__VA_ARGS__);
 
 #if true
 #define MI_LOG_OUTPUT_FILE stderr
@@ -75,7 +76,7 @@
 #endif
 
 #define MI_LOG_INFO(msg) fprintf(MI_LOG_OUTPUT_FILE, "[Info] %s\n", msg);
-#define MI_LOG(format, ...) fprintf(MI_LOG_OUTPUT_FILE, format, __VA_ARGS__)
+#define MI_LOG(format, ...) fprintf(MI_LOG_OUTPUT_FILE, format, ##__VA_ARGS__);
 #define MI_OUTPUT_LINE fprintf(MI_LOG_OUTPUT_FILE, "[Info] lines: %d\n", __LINE__);
 
 // math
