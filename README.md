@@ -1,11 +1,11 @@
-# python-cplucplus
+# python-cpp-extension
 
 ```
 git clone git@github.com:banbao990/python-cplusplus.git
 git submodule update --init --recursive
 ```
 
-+ <span style="color:red">MUST DO THIS</span>
++ **<span style="color:red">MUST DO THIS</span>**
 ```bash
 python prepare.py
 # if complies error, do the following cmd instead
@@ -95,6 +95,7 @@ pip install tqdm
 pip install tensorboard
 
 # torch_scatter
+# https://github.com/rusty1s/pytorch_scatter/issues/186
 pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-2.1.0+cu121.html
 
 # matplotlib, openexr
@@ -129,4 +130,4 @@ pipwin install pycuda
 #### linux
 
 + [教程](https://wiki.tiker.net/PyCuda/Installation/Linux/)
-
+  + **<div><span style="color:red">not tested</span></div>**
