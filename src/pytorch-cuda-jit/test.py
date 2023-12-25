@@ -16,7 +16,7 @@ Debug = False # compile with debug flag
 verbose = True # show compile command
 cuda_files = glob("bind.cu", root_dir=CURRENT_DIR) # source files
 cuda_files = [os.path.join(CURRENT_DIR, f) for f in cuda_files]
-include_dirs = [os.path.join(CURRENT_DIR, "../include")] # include directories
+include_dirs = [os.path.join(CURRENT_DIR, "include")] # include directories
 cflags = ["--extended-lambda" ,"--expt-relaxed-constexpr"] # nvcc flags
 
 if sys.platform == "win32":
@@ -44,5 +44,5 @@ b = torch.arange(N, device="cuda", dtype=torch.float32)
 
 c = cuda_module.custom_cuda_func(a, b)
 
-print("Test Result: {}".format(torch.allclose(c, a + b)))
-
+res = torch.allclose(c, a + b)
+print("\033[9{}mTest Result: {}\033[00m".format(2 if res else 1, res))
