@@ -36,6 +36,9 @@ if __name__ == "__main__":
     use_same_seed = False
     same_seed = 0
     img = None
+    acc = False
+    img_acc = None
+    num_acc = 0
 
     while not ui.should_close():
         if (not update_frame):
@@ -47,6 +50,12 @@ if __name__ == "__main__":
         vc, spp = imgui.slider_int("spp", spp, 1, 16)
         vc, optix_denoiser_on = imgui.checkbox(
             "Optix Denoiser On", optix_denoiser_on)
+        value_changed = value_changed or vc
+        vc, acc = imgui.checkbox("Accumulate", acc)
+        if (vc):
+            num_acc = 0
+            img_acc = None
+        imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
         value_changed = value_changed or vc
 
         if (denoiser == None):
@@ -68,10 +77,18 @@ if __name__ == "__main__":
             img = mi.render(scene=scene, spp=spp, seed=seed,
                             integrator=integrator)
 
+            img = img.torch()
+
+            if (acc):
+                if (img_acc == None):
+                    img_acc = img[::, ::, 0:3:1]
+                else:
+                    img_acc = img_acc + img[::, ::, 0:3:1]
+                num_acc += 1
+                img[::, ::, 0:3:1] = img_acc / num_acc
+
             if (optix_denoiser_on):
                 img = denoiser.denoise(img)
-            else:
-                img = img.torch()
 
             img = tonemap_aces(img)
 

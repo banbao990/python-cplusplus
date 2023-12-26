@@ -1,6 +1,7 @@
 import cmake_optix_example as optix
 import imgui
 import mitsuba as mi
+import torch
 
 
 class OptixDenoiser:
@@ -9,8 +10,8 @@ class OptixDenoiser:
         self.aux = False
         self.temporal = False
 
-    def denoise(self, noisy):
-        img = self.module.denoise(noisy.torch(), self.aux, self.temporal)
+    def denoise(self, noisy: torch.Tensor):
+        img = self.module.denoise(noisy, self.aux, self.temporal)
         return img
 
     def render_ui(self, integrator):
