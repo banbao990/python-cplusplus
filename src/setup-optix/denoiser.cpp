@@ -50,8 +50,8 @@ void Denoiser::init() {
     // CUDA_CHECK(cudaStreamCreate(&m_stream));
 
     cudaGetDeviceProperties(&m_device_props, deviceID);
-    MI_LOG("[Info] optix version: %d\n", OPTIX_VERSION);
-    MI_LOG("[Info] cuda version: %d\n", CUDART_VERSION);
+    MI_LOG("optix version: %d\n", OPTIX_VERSION);
+    MI_LOG("cuda version: %d\n", CUDART_VERSION);
     MI_LOG("[optix] device: %s\n", m_device_props.name);
 
     CUresult cuRes = cuCtxGetCurrent(&m_cuda_context);
