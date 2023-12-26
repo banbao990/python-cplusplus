@@ -12,6 +12,13 @@ private:
     bool m_initialized = false;
     bool m_aux = false;
     bool m_temporal = false;
+    bool m_have_previous_denoised_img = false;
+    torch::Tensor m_zero_flow = {};
+
+    OptixDenoiserSizes m_memory_sizes = {};
+    torch::Tensor m_previous_denoised_img = {};
+    torch::Tensor m_internal_mem_in = {};
+    torch::Tensor m_internal_mem_out = {};
 
     // CUstream m_stream = nullptr;
     cudaDeviceProp m_device_props = {};
@@ -37,7 +44,8 @@ public:
     ~Denoiser();
     void init();
     void resize(const int3 size, const bool aux = false, const bool temporal = false);
-    void resize_denoised_img();
+    void resize_denoised_images();
+    void resize_temporal_images();
     void resize_optix_denoiser();
 
     torch::Tensor denoise(const torch::Tensor *img_with_noise,

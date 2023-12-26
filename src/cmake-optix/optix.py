@@ -7,16 +7,10 @@ class OptixDenoiser:
     def __init__(self):
         self.module = optix
         self.aux = False
+        self.temporal = False
 
     def denoise(self, noisy):
-        img = None
-        if (self.aux):
-            color = noisy[..., :3].torch()
-            albedo = noisy[..., 3:6].torch()
-            normal = noisy[..., 6:9].torch()
-            img = self.module.denoise_aux(color, albedo, normal)
-        else:
-            img = self.module.denoise(noisy.torch())
+        img = self.module.denoise(noisy.torch(), self.aux, self.temporal)
         return img
 
     def render_ui(self, integrator):
@@ -24,6 +18,10 @@ class OptixDenoiser:
         if imgui.tree_node("Denoise Options", imgui.TREE_NODE_DEFAULT_OPEN):
             vc, self.aux = imgui.checkbox("Use Albedo and Normal", self.aux)
             value_changed = value_changed or vc
+
+            vc, self.temporal = imgui.checkbox("Use Temporal", self.temporal)
+            value_changed = value_changed or vc
+
             imgui.tree_pop()
 
         aovs = "albedo:albedo,sh_normal:sh_normal"

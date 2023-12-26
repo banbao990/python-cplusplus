@@ -33,32 +33,25 @@ void init_denoiser() {
     }
 }
 
-torch::Tensor optix_denoise(const torch::Tensor &img_with_noise) {
+torch::Tensor optix_denoise(const torch::Tensor &noisy, bool aux, bool temporal) {
     init_denoiser();
-    const int height = img_with_noise.size(0);
-    const int width = img_with_noise.size(1);
-    const int element_size = img_with_noise.size(2) * sizeof(float);
+    const int height = noisy.size(0);
+    const int width = noisy.size(1);
+    const int channels = (noisy.size(2) - (aux ? 6 : 0));
+    const int element_size = channels * sizeof(float);
 
     assert(element_size == sizeof(float3) || element_size == sizeof(float4));
 
     Denoiser *denoiser = Denoiser::get_instance();
-    denoiser->resize({width, height, element_size});
-    return denoiser->denoise(&img_with_noise, nullptr, nullptr);
-}
-
-torch::Tensor optix_denoise_aux(const torch::Tensor &img_with_noise,
-                                const torch::Tensor &albedo,
-                                const torch::Tensor &normal) {
-    init_denoiser();
-    const int height = img_with_noise.size(0);
-    const int width = img_with_noise.size(1);
-    const int element_size = img_with_noise.size(2) * sizeof(float);
-
-    assert(element_size == sizeof(float3) || element_size == sizeof(float4));
-
-    Denoiser *denoiser = Denoiser::get_instance();
-    denoiser->resize({width, height, element_size}, true);
-    return denoiser->denoise(&img_with_noise, &albedo, &normal);
+    denoiser->resize({width, height, element_size}, aux, temporal);
+    if (aux) {
+        const torch::Tensor color = noisy.slice(2, 0, channels).clone();
+        const torch::Tensor albedo = noisy.slice(2, channels, channels + 3).clone();
+        const torch::Tensor normal = noisy.slice(2, channels + 3, channels + 6).clone();
+        return denoiser->denoise(&color, &albedo, &normal);
+    } else {
+        return denoiser->denoise(&noisy, nullptr, nullptr);
+    }
 }
 
 PYBIND11_MODULE(cmake_optix_example, m) {
@@ -66,5 +59,4 @@ PYBIND11_MODULE(cmake_optix_example, m) {
     m.def("denoise",
           &optix_denoise,
           "denoise the output color");
-    m.def("denoise_aux", &optix_denoise_aux, "denoise the output color with albedo and normal");
 }

@@ -66,12 +66,19 @@ void Denoiser::init() {
     m_initialized = true;
 }
 
-void Denoiser::resize_denoised_img() {
+void Denoiser::resize_denoised_images() {
     const int width = m_size.x;
     const int height = m_size.y;
     const int element_size = m_size.z;
     auto tensor_options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, 0).requires_grad(false);
     m_denoised_img = torch::empty({height, width, int(element_size / sizeof(float))}, tensor_options);
+}
+
+void Denoiser::resize_temporal_images() {
+    const int width = m_size.x;
+    const int height = m_size.y;
+    auto tensor_options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, 0).requires_grad(false);
+    m_zero_flow = torch::empty({height, width, 2}, tensor_options);
 }
 
 void Denoiser::resize_optix_denoiser() {
@@ -90,18 +97,18 @@ void Denoiser::resize_optix_denoiser() {
         denoiser_options.guideNormal = 1;
         denoiser_options.guideAlbedo = 1;
     }
-    OPTIX_CHECK(optixDenoiserCreate(m_optix_context, OPTIX_DENOISER_MODEL_KIND_HDR, &denoiser_options, &m_denoiser));
+    const OptixDenoiserModelKind kind = m_temporal ? OPTIX_DENOISER_MODEL_KIND_TEMPORAL : OPTIX_DENOISER_MODEL_KIND_HDR;
+    OPTIX_CHECK(optixDenoiserCreate(m_optix_context, kind, &denoiser_options, &m_denoiser));
     // .. then compute and allocate memory resources for the denoiser
-    OptixDenoiserSizes denoiser_return_sizes;
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(m_denoiser, width, height,
-                                                    &denoiser_return_sizes));
+                                                    &m_memory_sizes));
 
-    const int denoiser_scratch_size = (std::max)(denoiser_return_sizes.withOverlapScratchSizeInBytes,
-                                                 denoiser_return_sizes.withoutOverlapScratchSizeInBytes);
+    const int denoiser_scratch_size = (std::max)(m_memory_sizes.withOverlapScratchSizeInBytes,
+                                                 m_memory_sizes.withoutOverlapScratchSizeInBytes);
     auto tensor_options = torch::TensorOptions().dtype(torch::kByte).device(torch::kCUDA, 0).requires_grad(false);
     m_denoiser_scratch = torch::empty(denoiser_scratch_size, tensor_options);
 
-    const int denoiser_state_size = denoiser_return_sizes.stateSizeInBytes;
+    const int denoiser_state_size = m_memory_sizes.stateSizeInBytes;
     m_denoiser_state = torch::empty(denoiser_state_size, tensor_options);
 
     // ------------------------------------------------------------------
@@ -116,17 +123,24 @@ void Denoiser::resize_optix_denoiser() {
 
 void Denoiser::resize(const int3 size, const bool aux, const bool temporal) {
 
-    const bool change_buffer = (size != m_size);
+    const bool change_size = (size != m_size);
     const bool change_setting = (m_size.x != size.x) || (m_size.y != size.y) || (m_temporal != temporal) || (m_aux != aux);
+    const bool change_temporal = (m_temporal != temporal);
 
     // update
+    m_have_previous_denoised_img = !change_temporal;
     m_size = size;
     m_temporal = temporal;
     m_aux = aux;
 
+    // temporal buffers
+    if (change_temporal || change_size) {
+        resize_temporal_images();
+    }
+
     // output denoised image
-    if (change_buffer) {
-        resize_denoised_img();
+    if (change_size) {
+        resize_denoised_images();
     }
 
     // optix setup
@@ -185,11 +199,45 @@ torch::Tensor Denoiser::denoise(const torch::Tensor *img_with_noise,
     denoiserLayer.input = inputLayer;
     denoiserLayer.output = outputLayer;
     if (m_aux) {
+        // albedo
         inputLayer.format = OPTIX_PIXEL_FORMAT_FLOAT3;
         inputLayer.data = (CUdeviceptr)albedo->data_ptr();
         denoiserGuideLayer.albedo = inputLayer;
+        // normal
         inputLayer.data = (CUdeviceptr)normal->data_ptr();
         denoiserGuideLayer.normal = inputLayer;
+    }
+
+    if (m_temporal) {
+        // flow
+        inputLayer.data = (CUdeviceptr)m_zero_flow.data_ptr();
+        inputLayer.format = OPTIX_PIXEL_FORMAT_FLOAT2;
+        denoiserGuideLayer.flow = inputLayer;
+        // flow trustworthiness
+        inputLayer.data = (CUdeviceptr) nullptr;
+        inputLayer.format = OPTIX_PIXEL_FORMAT_FLOAT1;
+        denoiserGuideLayer.flowTrustworthiness = inputLayer;
+        // last frame
+        inputLayer.format = (element_size == sizeof(float4)) ? OPTIX_PIXEL_FORMAT_FLOAT4 : OPTIX_PIXEL_FORMAT_FLOAT3;
+        if (m_have_previous_denoised_img) {
+            inputLayer.data = (CUdeviceptr)m_previous_denoised_img.data_ptr();
+        } else {
+            inputLayer.data = (CUdeviceptr)img_with_noise->data_ptr();
+        }
+        denoiserLayer.previousOutput = inputLayer;
+
+        // previous output & output internal guide layer
+        size_t internal_size = width * height * sizeof(float) * m_memory_sizes.internalGuideLayerPixelSizeInBytes;
+        auto tensor_options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, 0).requires_grad(false);
+        // TODO: resize instead of new
+        m_internal_mem_in = torch::zeros(internal_size, tensor_options);
+        m_internal_mem_out = torch::empty(internal_size, tensor_options);
+        inputLayer.data = (CUdeviceptr)m_internal_mem_in.data_ptr();
+        inputLayer.pixelStrideInBytes = (unsigned int)m_memory_sizes.internalGuideLayerPixelSizeInBytes;
+        inputLayer.rowStrideInBytes = (unsigned int)(width * m_memory_sizes.internalGuideLayerPixelSizeInBytes);
+        inputLayer.format = OPTIX_PIXEL_FORMAT_INTERNAL_GUIDE_LAYER;
+        denoiserGuideLayer.previousOutputInternalGuideLayer = inputLayer;
+        denoiserGuideLayer.outputInternalGuideLayer = inputLayer;
     }
 
     OPTIX_CHECK(optixDenoiserInvoke(m_denoiser,
@@ -203,6 +251,12 @@ torch::Tensor Denoiser::denoise(const torch::Tensor *img_with_noise,
                                     /*inputOffsetY*/ 0,
                                     (CUdeviceptr)m_denoiser_scratch.data_ptr(),
                                     m_denoiser_scratch.sizes()[0]));
+
+    if (m_temporal) {
+        m_previous_denoised_img = m_denoised_img.clone();
+        m_have_previous_denoised_img = true;
+    }
+
     return m_denoised_img;
 }
 
