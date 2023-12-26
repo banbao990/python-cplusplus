@@ -31,6 +31,7 @@ if __name__ == "__main__":
     denoiser = None
     index = 0
     update_frame = True
+    spp = 4
 
     use_same_seed = False
     same_seed = 0
@@ -43,9 +44,18 @@ if __name__ == "__main__":
         value_changed = False
         vc, update_frame = imgui.checkbox("Update Frame", update_frame)
         value_changed = value_changed or vc
+        vc, spp = imgui.slider_int("spp", spp, 1, 16)
         vc, optix_denoiser_on = imgui.checkbox(
             "Optix Denoiser On", optix_denoiser_on)
         value_changed = value_changed or vc
+
+        if (denoiser == None):
+            denoiser = OptixDenoiser()
+
+        integrator = scene.integrator()
+        if (optix_denoiser_on):
+            vc, integrator = denoiser.render_ui(integrator)
+
         vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)
         seed = index
         if (vc):
@@ -55,12 +65,11 @@ if __name__ == "__main__":
         value_changed = value_changed or vc
 
         if (value_changed or update_frame):
-            img = mi.render(scene=scene, spp=4, seed=seed)
+            img = mi.render(scene=scene, spp=spp, seed=seed,
+                            integrator=integrator)
 
             if (optix_denoiser_on):
-                if (denoiser == None):
-                    denoiser = OptixDenoiser()
-                img = denoiser.denoise(img.torch())
+                img = denoiser.denoise(img)
             else:
                 img = img.torch()
 
@@ -80,4 +89,5 @@ if __name__ == "__main__":
     if (not os.path.exists(result_dir)):
         os.makedirs(result_dir)
     timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
-    mi.util.write_bitmap(os.path.join(result_dir, "output-{}.png".format(timestamp)), img)
+    mi.util.write_bitmap(os.path.join(
+        result_dir, "output-{}.png".format(timestamp)), img)

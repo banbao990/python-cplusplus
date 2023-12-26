@@ -12,6 +12,7 @@ from cuda import cudart
 import numpy as np
 import os
 import sys
+import time
 import mitsuba as mi
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -246,6 +247,7 @@ if __name__ == "__main__":
     ui = UI(width, height)
 
     while not ui.should_close():
+        time.sleep(1 / 60)
         ui.begin_frame()
         ui.write_texture_gpu(img)
         ui.end_frame()

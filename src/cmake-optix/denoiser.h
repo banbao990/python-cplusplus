@@ -10,6 +10,8 @@
 class Denoiser {
 private:
     bool m_initialized = false;
+    bool m_aux = false;
+    bool m_temporal = false;
 
     // CUstream m_stream = nullptr;
     cudaDeviceProp m_device_props = {};
@@ -34,11 +36,13 @@ public:
     static Denoiser *get_instance();
     ~Denoiser();
     void init();
-    void resize(const int3 size);
-    void resize_denoised_img(const int3 size);
-    void resize_optix_denoiser(const int3 size);
+    void resize(const int3 size, const bool aux = false, const bool temporal = false);
+    void resize_denoised_img();
+    void resize_optix_denoiser();
 
-    torch::Tensor denoise(const torch::Tensor &img_with_noise);
+    torch::Tensor denoise(const torch::Tensor *img_with_noise,
+                          const torch::Tensor *albedo,
+                          const torch::Tensor *normal);
 
     static void context_log_cb(unsigned int level,
                                const char *tag,

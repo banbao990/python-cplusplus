@@ -27,6 +27,11 @@ Denoiser::~Denoiser() {
 }
 
 void Denoiser::init() {
+    if (OPTIX_VERSION < 80000) {
+        MI_LOG_E("Optix Should >= %d, yours is %d\n", 80000, OPTIX_VERSION);
+        exit(1);
+    }
+
     if (m_initialized) {
         return;
     }
@@ -61,53 +66,38 @@ void Denoiser::init() {
     m_initialized = true;
 }
 
-void Denoiser::resize_denoised_img(const int3 size) {
-    const int &width = size.x;
-    const int &height = size.y;
-    const int &element_size = size.z;
-
+void Denoiser::resize_denoised_img() {
+    const int width = m_size.x;
+    const int height = m_size.y;
+    const int element_size = m_size.z;
     auto tensor_options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, 0).requires_grad(false);
     m_denoised_img = torch::empty({height, width, int(element_size / sizeof(float))}, tensor_options);
 }
 
-void Denoiser::resize_optix_denoiser(const int3 size) {
+void Denoiser::resize_optix_denoiser() {
     if (m_denoiser != nullptr) {
         OPTIX_CHECK(optixDenoiserDestroy(m_denoiser));
     }
 
-    const int &width = size.x;
-    const int &height = size.y;
-    const int &element_size = size.z;
+    const int width = m_size.x;
+    const int height = m_size.y;
+    const int element_size = m_size.z;
 
     // ------------------------------------------------------------------
     // create the denoiser:
     OptixDenoiserOptions denoiser_options = {};
-
-#if OPTIX_VERSION >= 70300
+    if (m_aux) {
+        denoiser_options.guideNormal = 1;
+        denoiser_options.guideAlbedo = 1;
+    }
     OPTIX_CHECK(optixDenoiserCreate(m_optix_context, OPTIX_DENOISER_MODEL_KIND_HDR, &denoiser_options, &m_denoiser));
-#else
-    denoiser_options.inputKind = OPTIX_DENOISER_INPUT_RGB;
-
-#if OPTIX_VERSION < 70100
-    // these only exist in 7.0, not 7.1
-    denoiser_options.pixelFormat = OPTIX_PIXEL_FORMAT_FLOAT4;
-#endif
-
-    OPTIX_CHECK(optixDenoiserCreate(m_optix_context, &denoiser_options, &m_denoiser));
-    OPTIX_CHECK(optixDenoiserSetModel(m_denoiser, OPTIX_DENOISER_MODEL_KIND_HDR, NULL, 0));
-#endif
-
     // .. then compute and allocate memory resources for the denoiser
     OptixDenoiserSizes denoiser_return_sizes;
     OPTIX_CHECK(optixDenoiserComputeMemoryResources(m_denoiser, width, height,
                                                     &denoiser_return_sizes));
 
-#if OPTIX_VERSION < 70100
-    const int denoiser_scratch_size = denoiser_return_sizes.recommendedScratchSizeInBytes;
-#else
     const int denoiser_scratch_size = (std::max)(denoiser_return_sizes.withOverlapScratchSizeInBytes,
                                                  denoiser_return_sizes.withoutOverlapScratchSizeInBytes);
-#endif
     auto tensor_options = torch::TensorOptions().dtype(torch::kByte).device(torch::kCUDA, 0).requires_grad(false);
     m_denoiser_scratch = torch::empty(denoiser_scratch_size, tensor_options);
 
@@ -124,43 +114,55 @@ void Denoiser::resize_optix_denoiser(const int3 size) {
                            m_denoiser_scratch.sizes()[0]));
 }
 
-void Denoiser::resize(const int3 size) {
+void Denoiser::resize(const int3 size, const bool aux, const bool temporal) {
+
+    const bool change_buffer = (size != m_size);
+    const bool change_setting = (m_size.x != size.x) || (m_size.y != size.y) || (m_temporal != temporal) || (m_aux != aux);
+
+    // update
+    m_size = size;
+    m_temporal = temporal;
+    m_aux = aux;
+
     // output denoised image
-    if (size != m_size) {
-        resize_denoised_img(size);
+    if (change_buffer) {
+        resize_denoised_img();
     }
 
     // optix setup
-    if (!(size.x == m_size.x && size.y == m_size.y)) {
-        resize_optix_denoiser(size);
+    if (change_setting) {
+        resize_optix_denoiser();
     }
-
-    m_size = size;
 }
 
-torch::Tensor Denoiser::denoise(const torch::Tensor &img_with_noise) {
-    const int height = img_with_noise.size(0);
-    const int width = img_with_noise.size(1);
-    const int element_size = img_with_noise.size(2) * sizeof(float);
+torch::Tensor Denoiser::denoise(const torch::Tensor *img_with_noise,
+                                const torch::Tensor *albedo,
+                                const torch::Tensor *normal) {
+    // guard
+    if (m_aux) {
+        assert(albedo != nullptr);
+        assert(normal != nullptr);
+    }
+
+    const int height = img_with_noise->size(0);
+    const int width = img_with_noise->size(1);
+    const int element_size = img_with_noise->size(2) * sizeof(float);
 
     // TODO: const vars for now
     const bool accumulate = false;
     const int frame_id = 10;
 
     OptixDenoiserParams denoiserParams = {};
-#if OPTIX_VERSION >= 80000
-#elif OPTIX_VERSION > 70500
-    denoiserParams.denoiseAlpha = OPTIX_DENOISER_ALPHA_MODE_ALPHA_AS_AOV;
-#endif
     denoiserParams.hdrIntensity = (CUdeviceptr)0;
-    if (accumulate)
+    if (accumulate) {
         denoiserParams.blendFactor = 1.f / frame_id;
-    else
+    } else {
         denoiserParams.blendFactor = 0.0f;
+    }
 
     // -------------------------------------------------------
     OptixImage2D inputLayer = {};
-    inputLayer.data = (CUdeviceptr)img_with_noise.data_ptr();
+    inputLayer.data = (CUdeviceptr)img_with_noise->data_ptr();
     /// Width of the image (in pixels)
     inputLayer.width = width;
     /// Height of the image (in pixels)
@@ -177,12 +179,18 @@ torch::Tensor Denoiser::denoise(const torch::Tensor &img_with_noise) {
     OptixImage2D outputLayer = inputLayer;
     outputLayer.data = (CUdeviceptr)m_denoised_img.data_ptr();
 
-#if OPTIX_VERSION >= 70300
     OptixDenoiserGuideLayer denoiserGuideLayer = {};
 
     OptixDenoiserLayer denoiserLayer = {};
     denoiserLayer.input = inputLayer;
     denoiserLayer.output = outputLayer;
+    if (m_aux) {
+        inputLayer.format = OPTIX_PIXEL_FORMAT_FLOAT3;
+        inputLayer.data = (CUdeviceptr)albedo->data_ptr();
+        denoiserGuideLayer.albedo = inputLayer;
+        inputLayer.data = (CUdeviceptr)normal->data_ptr();
+        denoiserGuideLayer.normal = inputLayer;
+    }
 
     OPTIX_CHECK(optixDenoiserInvoke(m_denoiser,
                                     /*stream*/ 0,
@@ -195,20 +203,6 @@ torch::Tensor Denoiser::denoise(const torch::Tensor &img_with_noise) {
                                     /*inputOffsetY*/ 0,
                                     (CUdeviceptr)m_denoiser_scratch.data_ptr(),
                                     m_denoiser_scratch.sizes()[0]));
-#else
-    OPTIX_CHECK(optixDenoiserInvoke(denoiser,
-                                    /*stream*/ 0,
-                                    &denoiserParams,
-                                    m_denoiser_state.data_ptr(),
-                                    s_denoiser_state_size,
-                                    &inputLayer, 1,
-                                    /*inputOffsetX*/ 0,
-                                    /*inputOffsetY*/ 0,
-                                    &outputLayer,
-                                    m_denoiser_scratch.data_ptr(),
-                                    s_denoiser_scratch_size));
-#endif
-    // MI_LOG("%lu\n", (unsigned long)img_with_noise.data_ptr());
     return m_denoised_img;
 }
 
@@ -216,5 +210,5 @@ void Denoiser::context_log_cb(unsigned int level,
                               const char *tag,
                               const char *message,
                               void *) {
-    MI_LOG_E("[%2d][%12s]: %s\n", (int)level, tag, message);
+    MI_LOG("[%2d][%12s]: %s\n", (int)level, tag, message);
 }

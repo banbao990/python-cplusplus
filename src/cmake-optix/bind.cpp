@@ -19,19 +19,7 @@ LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo
 }
 #endif
 
-torch::Tensor optix_denoise(const torch::Tensor &img_with_noise) {
-    const int height = img_with_noise.size(0);
-    const int width = img_with_noise.size(1);
-    const int element_size = img_with_noise.size(2) * sizeof(float);
-
-    assert(element_size == sizeof(float3) || element_size == sizeof(float4));
-
-    Denoiser *denoiser = Denoiser::get_instance();
-    denoiser->resize({width, height, element_size});
-    return denoiser->denoise(img_with_noise);
-}
-
-void init_denoiser(const std::string &model_path) {
+void init_denoiser() {
     static bool is_init = false;
     if (is_init) {
         return;
@@ -45,9 +33,38 @@ void init_denoiser(const std::string &model_path) {
     }
 }
 
+torch::Tensor optix_denoise(const torch::Tensor &img_with_noise) {
+    init_denoiser();
+    const int height = img_with_noise.size(0);
+    const int width = img_with_noise.size(1);
+    const int element_size = img_with_noise.size(2) * sizeof(float);
+
+    assert(element_size == sizeof(float3) || element_size == sizeof(float4));
+
+    Denoiser *denoiser = Denoiser::get_instance();
+    denoiser->resize({width, height, element_size});
+    return denoiser->denoise(&img_with_noise, nullptr, nullptr);
+}
+
+torch::Tensor optix_denoise_aux(const torch::Tensor &img_with_noise,
+                                const torch::Tensor &albedo,
+                                const torch::Tensor &normal) {
+    init_denoiser();
+    const int height = img_with_noise.size(0);
+    const int width = img_with_noise.size(1);
+    const int element_size = img_with_noise.size(2) * sizeof(float);
+
+    assert(element_size == sizeof(float3) || element_size == sizeof(float4));
+
+    Denoiser *denoiser = Denoiser::get_instance();
+    denoiser->resize({width, height, element_size}, true);
+    return denoiser->denoise(&img_with_noise, &albedo, &normal);
+}
+
 PYBIND11_MODULE(cmake_optix_example, m) {
     m.def("init", &init_denoiser, "init the denoiser");
     m.def("denoise",
           &optix_denoise,
           "denoise the output color");
+    m.def("denoise_aux", &optix_denoise_aux, "denoise the output color with albedo and normal");
 }
