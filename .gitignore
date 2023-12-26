@@ -11,4 +11,5 @@ dist
 src/**/pybind11
 src/cmake-oidn/oidn
 
-assets/images/a.png
+assets/ignore/
+imgui.ini

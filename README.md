@@ -18,6 +18,8 @@ python prepare.py
 
 ## 例子
 
++ 基本例子
+
 |        module         |    window    |    Linux     |   备注   |
 | :-------------------: | :----------: | :----------: | :------: |
 |   pytorch-cuda-jit    | $\checkmark$ | $\checkmark$ | 直接执行 |
@@ -26,11 +28,26 @@ python prepare.py
 |   python-cpp-cmake    | $\checkmark$ | $\checkmark$ | 安装执行 |
 |      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行 |
 
++ 其他例子
+
+|   module    |    window    | Linux |   备注   |
+| :---------: | :----------: | :---: | :------: |
+| cmake-optix | $\checkmark$ |       | 安装执行 |
+
 + 测试环境
   + windows
     + cuda 12.3、optix SDK 8.0.0、cmake 3.25.1
   + linux
     + cuda 12.1、optix SDK 8.0.0、cmake 3.25.1
++ Optix SDK：[Link](https://developer.nvidia.com/designworks/optix/download)
+  + 可以直接通过 `wget` 下载
+
+
+```txt
+https://developer.nvidia.com/downloads/designworks/optix/secure/8.0.0/nvidia-optix-sdk-8.0.0-win64.exe
+https://developer.nvidia.com/downloads/designworks/optix/secure/8.0.0/nvidia-optix-sdk-8.0.0-linux64-x86_64.sh
+```
+
 + 直接执行（例子）
 
 ```bash
@@ -64,11 +81,14 @@ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvi
 
 # ninja, opencv, yacs
 pip install ninja opencv-python yacs pybind11
+
+# ui
+pip install imgui glfw cuda-python PyOpenGL PyOpenGL_accelerate
 ```
 
 
 
-## 其他
+### 其他库
 
 + mi 环境中的其他库
 
@@ -76,13 +96,7 @@ pip install ninja opencv-python yacs pybind11
 # mitsuba
 pip install mitsuba
 
-# glfw, imgui
-pip install imgui
-pip install glfw
-
 # opengl, cuda
-pip install PyOpenGL PyOpenGL_accelerate
-pip install cuda-python
 pip install pycuda # 会报错, 解决方案见下面
 
 # tinycudann
@@ -108,12 +122,16 @@ pip install oidn
 
 
 
-### cuda 问题
+## 其他问题
+
+### pycuda
+
++ **这个库能够完全被 `cuda-python` 库取代，现在也不用了**
++ 直接 `pip install pycuda` 报错
+  +  `PyCUDA was compiled without GL extension support`
 
 #### windows
 
-+ 直接 `pip install pycuda` 报错
-  +  `PyCUDA was compiled without GL extension support`
 + [解决方案](https://github.com/harskish/ganspace/issues/43)
 
 ```txt
@@ -125,9 +143,6 @@ pip install pipwin
 pipwin install pycuda
 ```
 
-
-
 #### linux
 
-+ [教程](https://wiki.tiker.net/PyCuda/Installation/Linux/)
-  + **<div><span style="color:red">not tested</span></div>**
++ 从源码安装：[code](https://github.com/inducer/pycuda)
