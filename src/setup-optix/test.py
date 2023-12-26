@@ -40,7 +40,7 @@ if __name__ == "__main__":
             ui_gpu_on = True
         elif sys.platform == "linux":
             ui_gpu_on = False
-        ui = UI(width, height, ui_gpu_on)
+    ui = UI(width, height, ui_gpu_on)
 
     optix_denoiser_on = False
     denoiser = None
