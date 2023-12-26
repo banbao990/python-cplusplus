@@ -1,5 +1,5 @@
 build
-.vscode
+.vscode/settings.json
 __pycache__
 log.txt
 .vs
@@ -13,3 +13,4 @@ src/cmake-oidn/oidn
 
 assets/ignore/
 imgui.ini
+results/

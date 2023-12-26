@@ -45,15 +45,9 @@ void init_denoiser(const std::string &model_path) {
     }
 }
 
-void free_denoiser() {
-    Denoiser *denoiser = Denoiser::get_instance();
-    delete denoiser;
-}
-
 PYBIND11_MODULE(cmake_optix_example, m) {
     m.def("init", &init_denoiser, "init the denoiser");
     m.def("denoise",
           &optix_denoise,
           "denoise the output color");
-    m.def("free", &free_denoiser, "delete the denoiser");
 }

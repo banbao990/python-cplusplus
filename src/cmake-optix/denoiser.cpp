@@ -1,11 +1,8 @@
 #include "denoiser.h"
 
 Denoiser *Denoiser::get_instance() {
-    static Denoiser *s_instance = nullptr;
-    if (s_instance == nullptr) {
-        s_instance = new Denoiser();
-    }
-    return s_instance;
+    static Denoiser s_instance;
+    return &s_instance;
 }
 
 Denoiser::Denoiser() {
