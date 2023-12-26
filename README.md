@@ -84,6 +84,9 @@ pip install ninja opencv-python yacs pybind11
 
 # ui
 pip install imgui glfw cuda-python PyOpenGL PyOpenGL_accelerate
+
+# mitsuba
+pip install mitsuba
 ```
 
 
@@ -93,8 +96,7 @@ pip install imgui glfw cuda-python PyOpenGL PyOpenGL_accelerate
 + mi 环境中的其他库
 
 ```bash
-# mitsuba
-pip install mitsuba
+
 
 # opengl, cuda
 pip install pycuda # 会报错, 解决方案见下面
