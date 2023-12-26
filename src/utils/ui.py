@@ -56,7 +56,9 @@ def check_cuda_error(cres: cudart.cudaError_t):
 
 class UI:
 
-    def __init__(self, width, height, name="Simple UI"):
+    def __init__(self, width, height, gpu: bool = False, name="Simple UI"):
+        print("[UI] Write texture on GPU: {}".format(gpu))
+        self.gpu = gpu
         self.width = width
         self.height = height
         self.name = name
@@ -95,14 +97,15 @@ class UI:
         self.texture = self.create_texture()
 
         self.pbo = self.create_pbo(width, height)
-        cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(
-            int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
-        check_cuda_error(cres)
+        if self.gpu:
+            cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(
+                int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
+            check_cuda_error(cres)
 
     def close(self):
-
-        cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
-        check_cuda_error(cres)
+        if self.gpu:
+            cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
+            check_cuda_error(cres)
 
         glDeleteProgram(self.program)
         glDeleteVertexArrays(1, [self.vao])
@@ -202,11 +205,17 @@ class UI:
 
     # img: (height, width, 3) torch.float32
     def write_texture_gpu(self, img):
+        if not self.gpu:
+            self.write_texture_cpu(img.cpu().numpy())
+            return
+        
         cres, = cudart.cudaGraphicsMapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
-        cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(self.bufobj)
+        cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(
+            self.bufobj)
         check_cuda_error(cres)
-        cres, = cudart.cudaMemcpy(ptr, img.data_ptr(), size, cudart.cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+        cres, = cudart.cudaMemcpy(
+            ptr, img.data_ptr(), size, cudart.cudaMemcpyKind.cudaMemcpyDeviceToDevice)
         check_cuda_error(cres)
         cres, = cudart.cudaGraphicsUnmapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
@@ -244,7 +253,13 @@ if __name__ == "__main__":
     img = tonemap_aces(img)
 
     width, height = 1280, 720
-    ui = UI(width, height)
+
+    ui_gpu_on = False
+    if sys.platform == "win32":
+        ui_gpu_on = True
+    elif sys.platform == "linux":
+        ui_gpu_on = False
+    ui = UI(width, height, ui_gpu_on)
 
     while not ui.should_close():
         time.sleep(1 / 60)

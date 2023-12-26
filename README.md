@@ -29,10 +29,13 @@ python prepare.py
 |      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行 |
 
 + 其他例子
+  + optix：`albedo+normal`、`temporal`
 
-|   module    |    window    | Linux |   备注   |
-| :---------: | :----------: | :---: | :------: |
-| cmake-optix | $\checkmark$ |       | 安装执行 |
+
+|   module    |    window    |        Linux         |   备注   |
+| :---------: | :----------: | :------------------: | :------: |
+| cmake-optix | $\checkmark$ |                      | 安装执行 |
+| setup-optix | $\checkmark$ | $\checkmark$(CPU UI) | 安装执行 |
 
 + 测试环境
   + windows

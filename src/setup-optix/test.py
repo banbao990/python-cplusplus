@@ -25,7 +25,12 @@ if __name__ == "__main__":
     scene: mi.Scene = mi.load_file(scene_file)
     width, height = scene.sensors()[0].film().size()
 
-    ui = UI(width, height)
+    ui_gpu_on = False
+    if sys.platform == "win32":
+        ui_gpu_on = True
+    elif sys.platform == "linux":
+        ui_gpu_on = False
+    ui = UI(width, height, ui_gpu_on)
 
     optix_denoiser_on = False
     denoiser = None

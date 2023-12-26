@@ -1,4 +1,4 @@
-import cmake_optix_example as optix
+import setup_optix_example as optix
 import imgui
 import mitsuba as mi
 import torch
