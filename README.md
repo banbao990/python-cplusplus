@@ -32,10 +32,10 @@ python prepare.py
   + optix：`albedo+normal`、`temporal`
 
 
-|   module    |    window    |        Linux         |   备注   |
-| :---------: | :----------: | :------------------: | :------: |
-| cmake-optix | $\checkmark$ |                      | 安装执行 |
-| setup-optix | $\checkmark$ | $\checkmark$(CPU UI) | 安装执行 |
+|   module    |    window    |    Linux     |   备注   |
+| :---------: | :----------: | :----------: | :------: |
+| cmake-optix | $\checkmark$ |              | 安装执行 |
+| setup-optix | $\checkmark$ | $\checkmark$ | 安装执行 |
 
 + 测试环境
   + windows
@@ -64,6 +64,21 @@ python src/pytorch-cuda-jit/test.py
 python src/python-cpp-setuptools/install.py
 # run
 python src/python-cpp-setuptools/test.py
+```
+
+
+
+### setup-optix
+
++ 注意如果是 `setup-optix` 想要在 `GPU-UI` 模式下运行，执行如下命令
+  + 其中 `CUDA_VISIBLE_DEVICES=0` 表示有多张显卡，选择使用 `id=0` 的
+
+```bash
+# GPU
+CUDA_VISIBLE_DEVICES=0 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia python src/utils/ui.py --force_gpu_ui
+
+# CPU
+python src/utils/ui.py
 ```
 
 
@@ -99,8 +114,6 @@ pip install mitsuba
 + mi 环境中的其他库
 
 ```bash
-
-
 # opengl, cuda
 pip install pycuda # 会报错, 解决方案见下面
 

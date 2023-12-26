@@ -11,10 +11,17 @@ import imgui
 from optix import OptixDenoiser
 import time
 from datetime import datetime
+import argparse
 
 mi.set_variant("cuda_ad_rgb")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force_gpu_ui", action="store_true", help="force to use gpu ui")
+    args = parser.parse_args()
+    parser.print_help()
+    print("\n")
+
     scene_file = os.path.join(
         CURRENT_DIR, "../../assets/ignore/scenes/veach-ajar/scene.xml")
     if (not os.path.exists(scene_file)):
@@ -26,11 +33,14 @@ if __name__ == "__main__":
     width, height = scene.sensors()[0].film().size()
 
     ui_gpu_on = False
-    if sys.platform == "win32":
+    if (args.force_gpu_ui):
         ui_gpu_on = True
-    elif sys.platform == "linux":
-        ui_gpu_on = False
-    ui = UI(width, height, ui_gpu_on)
+    else:
+        if sys.platform == "win32":
+            ui_gpu_on = True
+        elif sys.platform == "linux":
+            ui_gpu_on = False
+        ui = UI(width, height, ui_gpu_on)
 
     optix_denoiser_on = False
     denoiser = None
