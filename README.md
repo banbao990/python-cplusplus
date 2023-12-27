@@ -29,8 +29,15 @@ python prepare.py
 |      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行 |
 
 + 其他例子
-  + optix：`albedo+normal`、`temporal`
+  + 实现功能 optix（`albedo+normal`、`temporal`）
 
+  + cmake-optix 问题：linux 运行报错
+
+
+```txt
+undefined symbol:
+  _ZN3c106detail14torchCheckFailEPKcS2_jRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+```
 
 |   module    |    window    |    Linux     |   备注   |
 | :---------: | :----------: | :----------: | :------: |
@@ -43,7 +50,6 @@ python prepare.py
   + linux
     + cuda 12.1、optix SDK 8.0.0、cmake 3.25.1
 + Optix SDK：[Link](https://developer.nvidia.com/designworks/optix/download)
-  + 可以直接通过 `wget` 下载
 
 
 ```txt
@@ -70,8 +76,15 @@ python src/python-cpp-setuptools/test.py
 
 ### setup-optix
 
++ 运行失败报错 `libGL error: MESA-LOADER: failed to open swrast`，虚拟环境中安装 `gcc`
+
+```bash
+ conda install -c conda-forge gcc
+```
+
 + 注意如果是 `setup-optix` 想要在 `GPU-UI` 模式下运行，执行如下命令
   + 其中 `CUDA_VISIBLE_DEVICES=0` 表示有多张显卡，选择使用 `id=0` 的
+  + 不加环境，直接运行会报错 `CUDA_ERROR`
 
 ```bash
 # GPU
@@ -94,7 +107,7 @@ conda create -n mi3 python=3.10
 ```
 
 ```bash
-# pytorch
+# pytorch(查看官网给的命令)
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
 # ninja, opencv, yacs
