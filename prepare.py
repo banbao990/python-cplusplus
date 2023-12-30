@@ -64,16 +64,17 @@ def deal_with_assets():
     src_dir = "assets/scenes/"
     for file in os.listdir(src_dir):
         if file.endswith(".zip"):
-            scenes.append("{}/{}".format(src_dir, file))
-
-    dst_dir = "assets/ignore/scenes/"
-    if(os.path.exists(dst_dir)):
-        print("    Directory Already Exists: {}".format(dst_dir))
-        return
+            scenes.append(file)
 
     # unzip
+    dst_dir = "assets/ignore/scenes/"
     for scene in scenes:
-        with zipfile.ZipFile(scene, 'r') as zip_ref:
+        scene_src = os.path.join(src_dir, scene)
+        scene_dst_dir = os.path.join(dst_dir, scene.split(".")[0])
+        if(os.path.exists(scene_dst_dir)):
+            continue
+        print("    unzip {}".format(scene))
+        with zipfile.ZipFile(scene_src, 'r') as zip_ref:
             zip_ref.extractall(dst_dir)
 
 if __name__ == '__main__':

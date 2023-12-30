@@ -3,6 +3,7 @@
 #include <torch/torch.h>
 
 #include "oidn_denoiser.h"
+#include "utils.h"
 #include <pybind11/pybind11.h>
 #include <iostream>
 
@@ -13,12 +14,12 @@ namespace py = pybind11;
 
 void init() {
     OidnDenoiser *oidn_denoiser = OidnDenoiser::get_instance();
-    std::cout << "OidnDenoiser initialized successfully" << std::endl;
+    std::cout << MI_INFO << "OidnDenoiser initialized successfully" << std::endl;
 }
 
 void denoise(torch::Tensor color, torch::Tensor output, int width, int height, int channels) {
     if (channels > 3 || channels < 1) {
-        std::cerr << "[Error] Oidn only supports up to 3 channels" << std::endl;
+        std::cerr << MI_ERROR << " Oidn only supports up to 3 channels" << std::endl;
         return;
     }
 
@@ -36,11 +37,17 @@ void denoise_with_normal_and_albedo(torch::Tensor color, torch::Tensor normal, t
     oidn_denoiser->denoise((float *)color.data_ptr(), (float *)normal.data_ptr(), (float *)albedo.data_ptr(), (float *)output.data_ptr(), width, height, channels);
 }
 
+void set_weights(std::string& weight_path) {
+    OidnDenoiser *oidn_denoiser = OidnDenoiser::get_instance();
+    oidn_denoiser->set_weights(weight_path);
+}
+
 PYBIND11_MODULE(oidn_example, m) {
     m.doc() = "pybind11 oidn plugin";  // optional module docstring
     m.def("init", &init, "Initialize oidn denoiser");
     m.def("denoise", &denoise, "Denoise image");
     m.def("denoise_with_normal_and_albedo", &denoise_with_normal_and_albedo, "Denoise image with normal and albedo");
+    m.def("set_weights", &set_weights, "Set weights");
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

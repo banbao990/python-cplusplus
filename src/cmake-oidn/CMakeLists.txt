@@ -8,6 +8,8 @@ add_subdirectory(pybind11)
 pybind11_add_module(${proj_name}
     bind.cpp
     oidn_denoiser.cpp
+    utils.cpp
+    utils.h
     oidn_denoiser.h
 )
 

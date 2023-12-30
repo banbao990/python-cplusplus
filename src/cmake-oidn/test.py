@@ -125,7 +125,7 @@ def test():
 
 def ui_test():
     scene_file = os.path.join(
-        CURRENT_DIR, "../../assets/ignore/scenes/veach-ajar/scene.xml")
+        CURRENT_DIR, "../../assets/ignore/scenes/living-room/scene.xml")
     if (not os.path.exists(scene_file)):
         print(
             "\033[91mScene File Not Found, Please Run 'python prepare.py' in the root dir\033[0m")
@@ -144,6 +144,7 @@ def ui_test():
     update_frame = True
     spp = 1
     use_albedo_and_normal = False
+    oidn_weight_index = 0
 
     while not ui.should_close():
         if (not update_frame):
@@ -176,18 +177,38 @@ def ui_test():
         value_changed = value_changed or vc
 
         # aux
+        integrator = scene.integrator()
         if oidn_denoiser_on:
-            vc, use_albedo_and_normal = imgui.checkbox(
-                "Use Albedo and Normal", use_albedo_and_normal)
+            # weight
+            weights_files = os.listdir(os.path.join(CURRENT_DIR, "weights"))
+            weights_files_names = [i.split(".")[0].split("_")[-1]
+                                   for i in weights_files]
+            weights_files_names.insert(0, "None")
+            vc, oidn_weight_index = imgui.combo(
+                "Weights", oidn_weight_index, weights_files_names)
+            if vc:
+                if oidn_weight_index == 0:
+                    denoiser.set_weights("")
+                else:
+                    denoiser.set_weights(os.path.join(
+                        CURRENT_DIR, "weights", weights_files[oidn_weight_index - 1]))
             value_changed = value_changed or vc
 
-        integrator = scene.integrator()
-        if use_albedo_and_normal:
-            integrator = mi.load_dict({
-                'type': 'aov',
-                'aovs': "albedo:albedo,sh_normal:sh_normal",
-                'integrator': integrator
-            })
+            # aux
+            if oidn_weight_index == 0:
+                vc, use_albedo_and_normal = imgui.checkbox(
+                    "Use Albedo and Normal", use_albedo_and_normal)
+                value_changed = value_changed or vc
+            else:
+                # weight file indicates whether to use albedo and normal
+                use_albedo_and_normal = weights_files[oidn_weight_index - 1].find(
+                    "alb_nrm") != -1
+            if use_albedo_and_normal:
+                integrator = mi.load_dict({
+                    'type': 'aov',
+                    'aovs': "albedo:albedo,sh_normal:sh_normal",
+                    'integrator': integrator
+                })
         img = mi.render(scene=scene, spp=spp, seed=seed,
                         integrator=integrator)
 
@@ -196,7 +217,7 @@ def ui_test():
         else:
             img = img.torch()
 
-        img = tonemap_aces(img)
+        # img = tonemap_aces(img)
         ui.write_texture_gpu(img)
 
         ui.end_frame()
