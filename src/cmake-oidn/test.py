@@ -21,15 +21,17 @@ from utils.images import read_exr, tonemap_aces, read_png
 from utils.pfm import read_pfm, write_pfm
 from utils.ui import UI
 import mitsuba as mi
+mi.set_variant("cuda_ad_rgb")
+from importlib import import_module
+OidnDenoiser = getattr(import_module("cmake-oidn.oidn"), "OidDenoiser")
+
 import imgui
 import time
-
-import oidn_example
-
 import cv2 as cv
 import numpy as np
 import torch
 import argparse
+from datetime import datetime
 
 
 def pfm_test():
@@ -54,6 +56,7 @@ def pfm_test():
 
 
 def test():
+    denoiser = OidnDenoiser()
     img_normal = None
     img_albedo = None
     # img_with_noise = read_png(os.path.join(CURRENT_DIR, "../../assets/images/cbox.png"))
@@ -98,19 +101,16 @@ def test():
         sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
 
         print("image size: {}".format(sub_image.shape))
-
-        image_clean = torch.zeros_like(sub_image).to("cuda")
-        oidn_example.denoise(
-            sub_image, image_clean, sub_image.shape[1], sub_image.shape[0], sub_image.shape[2])
+        image_clean = denoiser.denoise_simple(sub_image)
+        image_clean_aux = None
 
         if img_normal != None:
-            image_clean_aux = torch.zeros_like(sub_image).to("cuda")
             img_normal_aux = img_normal[x_start:x_end,
                                         y_start:y_end, :].clone()
             img_albedo_aux = img_albedo[x_start:x_end,
                                         y_start:y_end, :].clone()
-            oidn_example.denoise_with_normal_and_albedo(
-                sub_image, img_normal_aux, img_albedo_aux, image_clean_aux, sub_image.shape[1], sub_image.shape[0], sub_image.shape[2])
+            image_clean_aux = denoiser.denoise_albedo_normal(
+                sub_image, img_albedo_aux, img_normal_aux)
 
         cv.imshow("noise", tonemap_aces(sub_image).cpu().numpy())
         cv.imshow("denoised", tonemap_aces(image_clean).cpu().numpy())
@@ -124,7 +124,6 @@ def test():
 
 
 def ui_test():
-    mi.set_variant("cuda_ad_rgb")
     scene_file = os.path.join(
         CURRENT_DIR, "../../assets/ignore/scenes/veach-ajar/scene.xml")
     if (not os.path.exists(scene_file)):
@@ -144,18 +143,23 @@ def ui_test():
     index = 0
     update_frame = True
     spp = 1
+    use_albedo_and_normal = False
 
     while not ui.should_close():
         if (not update_frame):
             time.sleep(1 / 60)
         ui.begin_frame()
         value_changed = False
+
+        # update frame
         vc, update_frame = imgui.checkbox("Update Frame", update_frame)
         value_changed = value_changed or vc
+
+        # spp
         vc, spp = imgui.slider_int("spp", spp, 1, 16)
         value_changed = False
-        vc, oidn_denoiser_on = imgui.checkbox("OIDN On", oidn_denoiser_on)
-        value_changed = value_changed or vc
+
+        # seed
         vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)
         seed = index
         if (vc):
@@ -163,16 +167,34 @@ def ui_test():
         if (use_same_seed):
             seed = same_seed
         value_changed = value_changed or vc
+
+        # oidn
+        vc, oidn_denoiser_on = imgui.checkbox("OIDN On", oidn_denoiser_on)
+        if oidn_denoiser_on:
+            if denoiser == None:
+                denoiser = OidnDenoiser()
+        value_changed = value_changed or vc
+
+        # aux
+        if oidn_denoiser_on:
+            vc, use_albedo_and_normal = imgui.checkbox(
+                "Use Albedo and Normal", use_albedo_and_normal)
+            value_changed = value_changed or vc
+
         integrator = scene.integrator()
+        if use_albedo_and_normal:
+            integrator = mi.load_dict({
+                'type': 'aov',
+                'aovs': "albedo:albedo,sh_normal:sh_normal",
+                'integrator': integrator
+            })
         img = mi.render(scene=scene, spp=spp, seed=seed,
                         integrator=integrator)
 
-        img = img.torch()
         if (oidn_denoiser_on):
-            img_c = torch.zeros_like(img).to("cuda")
-            oidn_example.denoise(
-                img, img_c, img.shape[1], img.shape[0], img.shape[2])
-            img = img_c
+            img = denoiser.denoise(img, use_albedo_and_normal)
+        else:
+            img = img.torch()
 
         img = tonemap_aces(img)
         ui.write_texture_gpu(img)
@@ -180,13 +202,18 @@ def ui_test():
         ui.end_frame()
         index += 1
 
+    result_dir = os.path.join(CURRENT_DIR, "../../results")
+    if (not os.path.exists(result_dir)):
+        os.makedirs(result_dir)
+    timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
+    mi.util.write_bitmap(os.path.join(
+        result_dir, "output-{}.png".format(timestamp)), img)
+
 
 def test_oidn():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ui", action="store_true")
     args = parser.parse_args()
-
-    oidn_example.init()
 
     if args.ui:
         ui_test()
