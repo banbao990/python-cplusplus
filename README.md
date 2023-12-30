@@ -143,8 +143,11 @@ pip install tensorboard
 # https://github.com/rusty1s/pytorch_scatter/issues/186
 pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-2.1.0+cu121.html
 
-# matplotlib, openexr
+# matplotlib
 pip install matplotlib
+
+# openexr: linux 必须先执行第一步
+conda install openexr-python
 pip install OpenEXR
 
 # oidn (CPU version)
