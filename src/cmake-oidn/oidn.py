@@ -7,6 +7,9 @@ class OidDenoiser:
     def __init__(self) -> None:
         oidn.init()
 
+    def set_weights(self, weights:torch.tensor):
+        oidn.set_weights(weights)
+
     def denoise_simple(self, img:torch.tensor):
         img_clean = torch.zeros_like(img).to(img.device)
         oidn.denoise(img, img_clean, img.shape[1], img.shape[0], img.shape[2])
