@@ -179,30 +179,7 @@ def ui_test():
         # aux
         integrator = scene.integrator()
         if oidn_denoiser_on:
-            # weight
-            weights_files = os.listdir(os.path.join(CURRENT_DIR, "weights"))
-            weights_files_names = [i.split(".")[0].split("_")[-1]
-                                   for i in weights_files]
-            weights_files_names.insert(0, "None")
-            vc, oidn_weight_index = imgui.combo(
-                "Weights", oidn_weight_index, weights_files_names)
-            if vc:
-                if oidn_weight_index == 0:
-                    denoiser.set_weights("")
-                else:
-                    denoiser.set_weights(os.path.join(
-                        CURRENT_DIR, "weights", weights_files[oidn_weight_index - 1]))
-            value_changed = value_changed or vc
-
-            # aux
-            if oidn_weight_index == 0:
-                vc, use_albedo_and_normal = imgui.checkbox(
-                    "Use Albedo and Normal", use_albedo_and_normal)
-                value_changed = value_changed or vc
-            else:
-                # weight file indicates whether to use albedo and normal
-                use_albedo_and_normal = weights_files[oidn_weight_index - 1].find(
-                    "alb_nrm") != -1
+            vc, use_albedo_and_normal = denoiser.render_ui(use_albedo_and_normal)
             if use_albedo_and_normal:
                 integrator = mi.load_dict({
                     'type': 'aov',
