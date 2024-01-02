@@ -19,6 +19,7 @@ void OidnDenoiser::reset_filter() {
         m_filter.release();
     }
     m_filter = m_oidn_device.newFilter("RT");
+    m_mode = OidnMode::NONE;
 }
 
 OidnDenoiser::~OidnDenoiser() {
@@ -42,21 +43,25 @@ void OidnDenoiser::denoise(float *color, float *output, int width, int height, i
     m_filter.commit();
     m_filter.execute();
 
-    check_error();
+    check_error(__LINE__);
 }
 
-void OidnDenoiser::check_error() {
+void OidnDenoiser::check_error(const int line) {
     // check errors
     const char *error_message;
     if (m_oidn_device.getError(error_message) != oidn::Error::None) {
-        std::cerr << MI_ERROR << error_message << std::endl;
+        std::cerr << MI_ERROR << "[" << line << "] " << error_message << std::endl;
     }
+}
+
+void OidnDenoiser::add_set_weights_task(std::string &weight_path){
+    m_weight_path_to_set = weight_path;
+    m_set_weights_task_added = true;
 }
 
 void OidnDenoiser::set_weights(std::string &weight_path) {
     if (weight_path.empty()) {
         std::cout << MI_INFO << "Reset weights" << std::endl;
-        unset_and_set_mode(OidnMode::NONE);
         reset_filter();
         return;
     }
@@ -65,15 +70,13 @@ void OidnDenoiser::set_weights(std::string &weight_path) {
         std::cout << MI_INFO << "Weights already loaded" << std::endl;
     } else {
         std::cout << MI_INFO << "Loading weights from " << filename << std::endl
-                  << "    " << weight_path;
+                  << "    " << weight_path << std::endl;
         m_weights = load_file(weight_path);
         m_weight_path = weight_path;
     }
     OidnMode mode = filename.find("alb_nrm") ? OidnMode::AUX : OidnMode::SIMPLE;
-    unset_and_set_mode(mode);
+    m_mode = mode;
     m_filter.setData("weights", m_weights.data(), m_weights.size());
-    m_filter.commit();
-    check_error();
 }
 
 void OidnDenoiser::denoise(float *color, float *normal, float *albedo, float *output, int width, int height, int channels) {
@@ -89,10 +92,17 @@ void OidnDenoiser::denoise(float *color, float *normal, float *albedo, float *ou
     m_filter.commit();
     m_filter.execute();
 
-    check_error();
+    check_error(__LINE__);
 }
 
 void OidnDenoiser::unset_and_set_mode(OidnMode mode) {
+    // check weights
+    if(m_set_weights_task_added){
+        set_weights(m_weight_path_to_set);
+        m_set_weights_task_added = false;
+    }
+
+    // check mode
     if (m_mode != mode) {
         m_filter.unsetImage("color");
         m_filter.unsetImage("normal");

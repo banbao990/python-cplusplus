@@ -39,7 +39,7 @@ void denoise_with_normal_and_albedo(torch::Tensor color, torch::Tensor normal, t
 
 void set_weights(std::string& weight_path) {
     OidnDenoiser *oidn_denoiser = OidnDenoiser::get_instance();
-    oidn_denoiser->set_weights(weight_path);
+    oidn_denoiser->add_set_weights_task(weight_path);
 }
 
 PYBIND11_MODULE(oidn_example, m) {
