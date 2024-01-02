@@ -208,7 +208,7 @@ class UI:
         if not self.gpu:
             self.write_texture_cpu(img.cpu().numpy())
             return
-        
+
         cres, = cudart.cudaGraphicsMapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
         cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(

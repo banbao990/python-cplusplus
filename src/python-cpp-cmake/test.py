@@ -8,7 +8,7 @@ print("{} + {} = {}".format(a, b, cmake_example.add(a, b)))
 # lambda
 print("{} - {} = {}".format(a, b, cmake_example.subtract(a, b)))
 
-# keyword 
+# keyword
 print("{} * {} = {}".format(a, b, cmake_example.multiply(i=a, j=b)))
 print("{} * {} = {}".format(b, a, cmake_example.multiply(j=a, i=b)))
 

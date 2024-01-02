@@ -179,7 +179,8 @@ def ui_test():
         # aux
         integrator = scene.integrator()
         if oidn_denoiser_on:
-            vc, use_albedo_and_normal = denoiser.render_ui(use_albedo_and_normal)
+            vc, use_albedo_and_normal = denoiser.render_ui(
+                use_albedo_and_normal)
             if use_albedo_and_normal:
                 integrator = mi.load_dict({
                     'type': 'aov',

@@ -15,14 +15,17 @@ from utils.images import *
 
 from config import _C as cfg
 
+
 def compile():
     os.environ['PATH'] = os.environ['PATH'] + os.pathsep + cfg.CL_PATH
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
-    Debug = False # compile with debug flag
-    verbose = True # show compile command
-    cpp_files = glob("bind.cpp", root_dir=CURRENT_DIR) # source files # TODO: how to deal with many cpp files
+    Debug = False  # compile with debug flag
+    verbose = True  # show compile command
+    # source files # TODO: how to deal with many cpp files
+    cpp_files = glob("bind.cpp", root_dir=CURRENT_DIR)
     cpp_files = [os.path.join(CURRENT_DIR, file) for file in cpp_files]
-    include_dirs = [os.path.join(CURRENT_DIR, "../include")] # include directories
+    # include directories
+    include_dirs = [os.path.join(CURRENT_DIR, "../include")]
     include_dirs.append(cfg.OPTIX_INCLUDE_PATH)
     include_dirs.append(cfg.CUDA_INCLUDE_PATH)
     print(include_dirs)
@@ -55,9 +58,9 @@ def compile():
         ldflags.append("-lcuda")
 
     demo = load(
-        name="pytorch_optix_demo", # name can not have '-'
+        name="pytorch_optix_demo",  # name can not have '-'
         sources=cpp_files,
-        extra_include_paths=include_dirs,  
+        extra_include_paths=include_dirs,
         extra_cflags=cflags,
         extra_ldflags=ldflags,
         verbose=verbose,
@@ -66,6 +69,7 @@ def compile():
 
     return demo
 
+
 # main function
 if __name__ == "__main__":
 
@@ -73,21 +77,25 @@ if __name__ == "__main__":
 
     # read exr image and convert to torch tensor, get first 3 channels
     # img_with_noise = gen_noise((720, 720), 1000, True)
-    img_with_noise = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
+    img_with_noise = read_exr(os.path.join(
+        CURRENT_DIR, "../../assets/images/100spp.exr"))
     # img_with_noise = read_png(os.path.join(CURRENT_DIR, "../../assets/images/cbox.png"))
     # img_with_noise_tm = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp-tm.exr"))
     print("original image size: {}".format(img_with_noise.shape))
 
-    window_names = ["image with noise", "image clean", "image with noise(tm)", "image clean(tm)"]
+    window_names = ["image with noise", "image clean",
+                    "image with noise(tm)", "image clean(tm)"]
 
     crops = 5
     for i in range(crops):
         # generate random crop of image_with_noise_original
         SEG = 300
         x_start = np.random.randint(0, max(img_with_noise.shape[0] - SEG, 0))
-        x_end = np.random.randint(min(x_start + SEG, img_with_noise.shape[0]), img_with_noise.shape[0])
+        x_end = np.random.randint(
+            min(x_start + SEG, img_with_noise.shape[0]), img_with_noise.shape[0])
         y_start = np.random.randint(0, max(img_with_noise.shape[1] - SEG, 0))
-        y_end = np.random.randint(min(y_start + SEG, img_with_noise.shape[1]), img_with_noise.shape[1])
+        y_end = np.random.randint(
+            min(y_start + SEG, img_with_noise.shape[1]), img_with_noise.shape[1])
 
         sub_image = img_with_noise[x_start:x_end, y_start:y_end, :].clone()
 
@@ -103,6 +111,6 @@ if __name__ == "__main__":
         # the following methods are not recommended, because denoiser must be trained with original images(linear space)
         # cv.imshow(window_names[2], sub_image_tm.cpu().numpy())
         # cv.imshow(window_names[3], (image_clean_tm).cpu().numpy())
-        
-        if(cv.waitKey(0)):
+
+        if (cv.waitKey(0)):
             cv.destroyAllWindows()

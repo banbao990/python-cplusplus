@@ -54,7 +54,7 @@ void OidnDenoiser::check_error(const int line) {
     }
 }
 
-void OidnDenoiser::add_set_weights_task(std::string &weight_path){
+void OidnDenoiser::add_set_weights_task(std::string &weight_path) {
     m_weight_path_to_set = weight_path;
     m_set_weights_task_added = true;
 }
@@ -97,7 +97,7 @@ void OidnDenoiser::denoise(float *color, float *normal, float *albedo, float *ou
 
 void OidnDenoiser::unset_and_set_mode(OidnMode mode) {
     // check weights
-    if(m_set_weights_task_added){
+    if (m_set_weights_task_added) {
         set_weights(m_weight_path_to_set);
         m_set_weights_task_added = false;
     }

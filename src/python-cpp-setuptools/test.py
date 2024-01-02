@@ -8,7 +8,7 @@ print("{} + {} = {}".format(a, b, python_example.add(a, b)))
 # lambda
 print("{} - {} = {}".format(a, b, python_example.subtract(a, b)))
 
-# keyword 
+# keyword
 print("{} * {} = {}".format(a, b, python_example.multiply(i=a, j=b)))
 print("{} * {} = {}".format(b, a, python_example.multiply(j=a, i=b)))
 

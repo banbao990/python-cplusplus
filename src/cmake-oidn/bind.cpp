@@ -37,7 +37,7 @@ void denoise_with_normal_and_albedo(torch::Tensor color, torch::Tensor normal, t
     oidn_denoiser->denoise((float *)color.data_ptr(), (float *)normal.data_ptr(), (float *)albedo.data_ptr(), (float *)output.data_ptr(), width, height, channels);
 }
 
-void set_weights(std::string& weight_path) {
+void set_weights(std::string &weight_path) {
     OidnDenoiser *oidn_denoiser = OidnDenoiser::get_instance();
     oidn_denoiser->add_set_weights_task(weight_path);
 }

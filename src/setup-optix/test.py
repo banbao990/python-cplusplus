@@ -17,7 +17,8 @@ mi.set_variant("cuda_ad_rgb")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--force_gpu_ui", action="store_true", help="force to use gpu ui")
+    parser.add_argument("--force_gpu_ui", action="store_true",
+                        help="force to use gpu ui")
     args = parser.parse_args()
     parser.print_help()
     print("\n")

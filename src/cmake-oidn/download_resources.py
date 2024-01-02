@@ -10,6 +10,8 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 OIDN_DIR = os.path.join(CURRENT_DIR, "oidn")
 
 # download libs
+
+
 def download_libs():
     url = ""
     if sys.platform == "win32":
@@ -53,6 +55,7 @@ def download_libs():
 def clean_oidn():
     if os.path.exists(OIDN_DIR):
         shutil.rmtree(OIDN_DIR)
+
 
 # main function
 if __name__ == "__main__":

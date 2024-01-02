@@ -86,7 +86,8 @@ class CMakeBuild(build_ext):
             torch_libs = [x.replace(".lib", "") for x in torch_libs]
         cmake_args += [f"-DTORCH_LIBS={';'.join(torch_libs)}"]
 
-        cmake_args += ["-DOPTIX_INCLUDE_DIR={}".format(optix_cfg.OPTIX_INCLUDE_PATHS)]
+        cmake_args += ["-DOPTIX_INCLUDE_DIR={}".format(
+            optix_cfg.OPTIX_INCLUDE_PATHS)]
 
         if self.compiler.compiler_type != "msvc":
             # Using Ninja-build since it a) is available as a wheel and b)

@@ -12,12 +12,12 @@ if sys.platform == "win32":
     os.environ['PATH'] = os.environ['PATH'] + os.pathsep + CL_PATH
 
 os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
-Debug = False # compile with debug flag
-verbose = True # show compile command
-cuda_files = glob("bind.cu", root_dir=CURRENT_DIR) # source files
+Debug = False  # compile with debug flag
+verbose = True  # show compile command
+cuda_files = glob("bind.cu", root_dir=CURRENT_DIR)  # source files
 cuda_files = [os.path.join(CURRENT_DIR, f) for f in cuda_files]
-include_dirs = [os.path.join(CURRENT_DIR, "include")] # include directories
-cflags = ["--extended-lambda" ,"--expt-relaxed-constexpr"] # nvcc flags
+include_dirs = [os.path.join(CURRENT_DIR, "include")]  # include directories
+cflags = ["--extended-lambda", "--expt-relaxed-constexpr"]  # nvcc flags
 
 if sys.platform == "win32":
     if Debug:
@@ -33,7 +33,7 @@ elif sys.platform == "linux":
 cuda_module = load(
     name="cuda_module",
     sources=cuda_files,
-    extra_include_paths=include_dirs,  
+    extra_include_paths=include_dirs,
     extra_cflags=cflags,
     verbose=verbose,
 )

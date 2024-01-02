@@ -15,11 +15,9 @@
 
 /// Checks the result of a cuXXXXXX call and throws an error on failure
 #define CU_CHECK_THROW(x)                                                                        \
-    do                                                                                           \
-    {                                                                                            \
+    do {                                                                                         \
         CUresult result = x;                                                                     \
-        if (result != CUDA_SUCCESS)                                                              \
-        {                                                                                        \
+        if (result != CUDA_SUCCESS) {                                                            \
             const char *msg;                                                                     \
             cuGetErrorName(result, &msg);                                                        \
             throw std::runtime_error(std::string(FILE_LINE " " #x " failed with error ") + msg); \
@@ -28,11 +26,9 @@
 
 /// Checks the result of a cuXXXXXX call and prints an error on failure
 #define CU_CHECK_PRINT(x)                                                            \
-    do                                                                               \
-    {                                                                                \
+    do {                                                                             \
         CUresult result = x;                                                         \
-        if (result != CUDA_SUCCESS)                                                  \
-        {                                                                            \
+        if (result != CUDA_SUCCESS) {                                                \
             const char *msg;                                                         \
             cuGetErrorName(result, &msg);                                            \
             std::cout << FILE_LINE " " #x " failed with error " << msg << std::endl; \
@@ -41,8 +37,7 @@
 
 /// Checks the result of a cudaXXXXXX call and throws an error on failure
 #define CUDA_CHECK_THROW(x)                                                                \
-    do                                                                                     \
-    {                                                                                      \
+    do {                                                                                   \
         cudaError_t result = x;                                                            \
         if (result != cudaSuccess)                                                         \
             throw std::runtime_error(std::string(FILE_LINE " " #x " failed with error ") + \
@@ -51,48 +46,40 @@
 
 /// Checks the result of a cudaXXXXXX call and prints an error on failure
 #define CUDA_CHECK_PRINT(x)                                                                                 \
-    do                                                                                                      \
-    {                                                                                                       \
+    do {                                                                                                    \
         cudaError_t result = x;                                                                             \
         if (result != cudaSuccess)                                                                          \
             std::cout << FILE_LINE " " #x " failed with error " << cudaGetErrorString(result) << std::endl; \
     } while (0)
 
-
 constexpr uint32_t n_threads_linear = 128;
 constexpr uint32_t n_threads_linear_3D = 8;
 
 template <typename T>
-HOST_DEVICE T div_round_up(T val, T divisor)
-{
+HOST_DEVICE T div_round_up(T val, T divisor) {
     return (val + divisor - 1) / divisor;
 }
 
 template <typename T>
-constexpr uint32_t n_blocks_linear(T n_elements)
-{
+constexpr uint32_t n_blocks_linear(T n_elements) {
     return (uint32_t)div_round_up(n_elements, (T)n_threads_linear);
 }
 
 template <typename T>
-constexpr uint32_t n_blocks_linear_3D(T n_elements)
-{
+constexpr uint32_t n_blocks_linear_3D(T n_elements) {
     return (uint32_t)div_round_up(n_elements, (T)n_threads_linear_3D);
 }
 
 template <typename K, typename T, typename... Types>
-inline void linear_kernel(K kernel, T n_elements, Types... args)
-{
-    if (n_elements <= 0)
-    {
+inline void linear_kernel(K kernel, T n_elements, Types... args) {
+    if (n_elements <= 0) {
         return;
     }
     kernel<<<n_blocks_linear(n_elements), n_threads_linear>>>(args...);
 }
 
 template <typename F>
-__global__ void parallel_for_kernel(const size_t n_elements, F fun)
-{
+__global__ void parallel_for_kernel(const size_t n_elements, F fun) {
     const size_t i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n_elements)
         return;
@@ -100,46 +87,38 @@ __global__ void parallel_for_kernel(const size_t n_elements, F fun)
 }
 
 template <typename F>
-inline void parallel_for(uint32_t shmem_size, size_t n_elements, F &&fun)
-{
-    if (n_elements <= 0)
-    {
+inline void parallel_for(uint32_t shmem_size, size_t n_elements, F &&fun) {
+    if (n_elements <= 0) {
         return;
     }
     parallel_for_kernel<F><<<n_blocks_linear(n_elements), n_threads_linear, shmem_size>>>(n_elements, fun);
 }
 
 template <typename F>
-inline void parallel_for(size_t n_elements, F &&fun)
-{
+inline void parallel_for(size_t n_elements, F &&fun) {
     parallel_for(0, n_elements, std::forward<F>(fun));
 }
 
 template <typename F>
-__global__ void parallel_for_block_kernel(F fun)
-{
+__global__ void parallel_for_block_kernel(F fun) {
     fun(blockIdx.x, threadIdx.x);
 }
 
 template <typename F>
-inline void parallel_for_block(uint32_t shmem_size, size_t n_blocks, size_t n_threads, F &&fun)
-{
-    if (n_blocks <= 0 || n_threads <= 0)
-    {
+inline void parallel_for_block(uint32_t shmem_size, size_t n_blocks, size_t n_threads, F &&fun) {
+    if (n_blocks <= 0 || n_threads <= 0) {
         return;
     }
     parallel_for_block_kernel<F><<<n_blocks, n_threads, shmem_size>>>(fun);
 }
 
 template <typename F>
-inline void parallel_for_block(size_t n_blocks, size_t n_threads, F &&fun)
-{
+inline void parallel_for_block(size_t n_blocks, size_t n_threads, F &&fun) {
     parallel_for(0, n_blocks, n_threads, std::forward<F>(fun));
 }
 
 template <typename F>
-__global__ void parallel_for_aos_kernel(const size_t n_elements, const uint32_t n_dims, F fun)
-{
+__global__ void parallel_for_aos_kernel(const size_t n_elements, const uint32_t n_dims, F fun) {
     const size_t dim = threadIdx.x;
     const size_t elem = threadIdx.y + blockIdx.x * blockDim.y;
     if (dim >= n_dims)
@@ -151,10 +130,8 @@ __global__ void parallel_for_aos_kernel(const size_t n_elements, const uint32_t 
 }
 
 template <typename F>
-inline void parallel_for_aos(uint32_t shmem_size, size_t n_elements, uint32_t n_dims, F &&fun)
-{
-    if (n_elements <= 0 || n_dims <= 0)
-    {
+inline void parallel_for_aos(uint32_t shmem_size, size_t n_elements, uint32_t n_dims, F &&fun) {
+    if (n_elements <= 0 || n_dims <= 0) {
         return;
     }
     const dim3 threads = {n_dims, div_round_up(n_threads_linear, n_dims), 1};
@@ -165,14 +142,12 @@ inline void parallel_for_aos(uint32_t shmem_size, size_t n_elements, uint32_t n_
 }
 
 template <typename F>
-inline void parallel_for_aos(size_t n_elements, uint32_t n_dims, F &&fun)
-{
+inline void parallel_for_aos(size_t n_elements, uint32_t n_dims, F &&fun) {
     parallel_for_aos(0, n_elements, n_dims, std::forward<F>(fun));
 }
 
 template <typename F>
-__global__ void parallel_for_soa_kernel(const size_t n_elements, const uint32_t n_dims, F fun)
-{
+__global__ void parallel_for_soa_kernel(const size_t n_elements, const uint32_t n_dims, F fun) {
     const size_t elem = threadIdx.x + blockIdx.x * blockDim.x;
     const size_t dim = blockIdx.y;
     if (elem >= n_elements)
@@ -184,10 +159,8 @@ __global__ void parallel_for_soa_kernel(const size_t n_elements, const uint32_t 
 }
 
 template <typename F>
-inline void parallel_for_soa(uint32_t shmem_size, size_t n_elements, uint32_t n_dims, F &&fun)
-{
-    if (n_elements <= 0 || n_dims <= 0)
-    {
+inline void parallel_for_soa(uint32_t shmem_size, size_t n_elements, uint32_t n_dims, F &&fun) {
+    if (n_elements <= 0 || n_dims <= 0) {
         return;
     }
 
@@ -196,8 +169,7 @@ inline void parallel_for_soa(uint32_t shmem_size, size_t n_elements, uint32_t n_
 }
 
 template <typename F>
-inline void parallel_for_soa(size_t n_elements, uint32_t n_dims, F &&fun)
-{
+inline void parallel_for_soa(size_t n_elements, uint32_t n_dims, F &&fun) {
     parallel_for_soa(0, n_elements, n_dims, std::forward<F>(fun));
 }
 
@@ -205,8 +177,7 @@ template <typename F>
 __global__ void parallel_for_3D_kernel(const size_t n_elements_x,
                                        const size_t n_elements_y,
                                        const size_t n_elements_z,
-                                       F fun)
-{
+                                       F fun) {
     const size_t x = threadIdx.x + blockIdx.x * blockDim.x;
     const size_t y = threadIdx.y + blockIdx.y * blockDim.y;
     const size_t z = threadIdx.z + blockIdx.z * blockDim.z;
@@ -220,10 +191,8 @@ __global__ void parallel_for_3D_kernel(const size_t n_elements_x,
 }
 
 template <typename F>
-inline void parallel_for_3D(uint32_t shmem_size, size_t n_elements_x, size_t n_elements_y, size_t n_elements_z, F &&fun)
-{
-    if (n_elements_x <= 0 || n_elements_y <= 0 || n_elements_z <= 0)
-    {
+inline void parallel_for_3D(uint32_t shmem_size, size_t n_elements_x, size_t n_elements_y, size_t n_elements_z, F &&fun) {
+    if (n_elements_x <= 0 || n_elements_y <= 0 || n_elements_z <= 0) {
         return;
     }
     const dim3 threads = {n_threads_linear_3D, n_threads_linear_3D, n_threads_linear_3D};
@@ -235,65 +204,58 @@ inline void parallel_for_3D(uint32_t shmem_size, size_t n_elements_x, size_t n_e
 }
 
 template <typename F>
-inline void parallel_for_3D(size_t n_elements_x, size_t n_elements_y, size_t n_elements_z, F &&fun)
-{
+inline void parallel_for_3D(size_t n_elements_x, size_t n_elements_y, size_t n_elements_z, F &&fun) {
     parallel_for_3D(0, n_elements_x, n_elements_y, n_elements_z, std::forward<F>(fun));
 }
 
 template <typename T, size_t N>
-struct PitchedPtr
-{
-        HOST_DEVICE PitchedPtr() : ptr(nullptr) {}
+struct PitchedPtr {
+    HOST_DEVICE PitchedPtr()
+        : ptr(nullptr) {}
 
-        template <typename... Sizes>
-        HOST_DEVICE PitchedPtr(T *ptr, Sizes... sizes) : ptr(ptr)
-        {
-            set(ptr, sizes...);
-        }
+    template <typename... Sizes>
+    HOST_DEVICE PitchedPtr(T *ptr, Sizes... sizes)
+        : ptr(ptr) {
+        set(ptr, sizes...);
+    }
 
-        template <typename... Sizes>
-        HOST_DEVICE void set(T *ptr, Sizes... sizes)
-        {
-            static_assert(sizeof...(Sizes) == N, "Wrong number of sizes");
-            size_t sizes_array[N] = {static_cast<size_t>(sizes)...};
-            size[N - 1] = sizes_array[N - 1];
-            stride[N - 1] = 1;
+    template <typename... Sizes>
+    HOST_DEVICE void set(T *ptr, Sizes... sizes) {
+        static_assert(sizeof...(Sizes) == N, "Wrong number of sizes");
+        size_t sizes_array[N] = {static_cast<size_t>(sizes)...};
+        size[N - 1] = sizes_array[N - 1];
+        stride[N - 1] = 1;
 #pragma unroll
-            for (int i = N - 2; i >= 0; --i)
-            {
-                size[i] = sizes_array[i];
-                stride[i] = stride[i + 1] * size[i + 1];
-            }
-            this->ptr = ptr;
+        for (int i = N - 2; i >= 0; --i) {
+            size[i] = sizes_array[i];
+            stride[i] = stride[i + 1] * size[i + 1];
         }
+        this->ptr = ptr;
+    }
 
-        template <typename... Indices>
-        HOST_DEVICE T &operator()(Indices... indices) const
-        {
-            static_assert(sizeof...(Indices) == N, "Wrong number of indices");
-            return ptr[get_index(indices...)];
-        }
+    template <typename... Indices>
+    HOST_DEVICE T &operator()(Indices... indices) const {
+        static_assert(sizeof...(Indices) == N, "Wrong number of indices");
+        return ptr[get_index(indices...)];
+    }
 
-        HOST_DEVICE T &operator()(int3 coord) const
-        {
-            static_assert(N == 3, "int3 operator can only be used with N=3");
-            return ptr[get_index(coord.x, coord.y, coord.z)];
-        }
+    HOST_DEVICE T &operator()(int3 coord) const {
+        static_assert(N == 3, "int3 operator can only be used with N=3");
+        return ptr[get_index(coord.x, coord.y, coord.z)];
+    }
 
-        template <typename... Indices>
-        HOST_DEVICE size_t get_index(Indices... indices) const
-        {
-            size_t indices_array[N] = {static_cast<size_t>(indices)...};
-            size_t index = 0;
+    template <typename... Indices>
+    HOST_DEVICE size_t get_index(Indices... indices) const {
+        size_t indices_array[N] = {static_cast<size_t>(indices)...};
+        size_t index = 0;
 #pragma unroll
-            for (int i = 0; i < N; ++i)
-            {
-                index += indices_array[i] * stride[i];
-            }
-            return index;
+        for (int i = 0; i < N; ++i) {
+            index += indices_array[i] * stride[i];
         }
+        return index;
+    }
 
-        T *ptr;
-        size_t stride[N];
-        size_t size[N];
+    T *ptr;
+    size_t stride[N];
+    size_t size[N];
 };

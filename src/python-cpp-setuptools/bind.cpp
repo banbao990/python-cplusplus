@@ -49,7 +49,8 @@ PYBIND11_MODULE(python_example, m) {
 
     m.def("divide", &divide, R"pbdoc(
         Divide two numbers
-    )pbdoc",py::arg("i"), py::arg("j") = 1.0f);
+    )pbdoc",
+          py::arg("i"), py::arg("j") = 1.0f);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

@@ -14,12 +14,12 @@ class FixedSizeQueue:
 
     def size(self):
         return len(self.queue)
-    
+
     def empty(self):
         return len(self.queue) == 0
-    
+
     def front(self):
         return self.queue[0]
-    
+
     def back(self):
         return self.queue[-1]
