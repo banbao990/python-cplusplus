@@ -9,8 +9,8 @@ dist
 *.so
 *pyd
 src/**/pybind11
-src/cmake-oidn/oidn
-src/cmake-oidn/weights/
+src/cmake_oidn/oidn
+src/cmake_oidn/weights/
 src/setup_oidn/oidn
 
 assets/ignore/

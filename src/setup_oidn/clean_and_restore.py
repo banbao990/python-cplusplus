@@ -7,5 +7,5 @@ sys.path.append("{}/../".format(CURRENT_DIR))
 from utils.clean import clean_build_and_uninstall
 
 if __name__ == "__main__":
-    lib_name = "setup_oidn"
+    lib_name = "setup_oidn_example"
     clean_build_and_uninstall(lib_name, CURRENT_DIR)

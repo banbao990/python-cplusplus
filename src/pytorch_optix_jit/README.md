@@ -15,4 +15,4 @@ python test.py > log.txt
 
 # INFO
 
-+ 细节不再更新，之后的更新在 `src/cmake-optix` 示例中
++ 细节不再更新，之后的更新在 `src/cmake_optix` 示例中

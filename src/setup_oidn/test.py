@@ -33,27 +33,6 @@ import argparse
 from datetime import datetime
 
 
-def pfm_test():
-    NAME = "cbox"
-
-    # read png
-    img = cv.imread(os.path.join(
-        CURRENT_DIR, "../../assets/images/{}.png".format(NAME)))
-    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-    # vertival flip
-    img = np.flipud(img)
-    img = np.array(img, dtype=np.float32) / 255.0
-
-    # little endian
-    write_pfm(os.path.join(
-        CURRENT_DIR, "../../assets/images/{}.pfm".format(NAME)), img, 1, '<')
-
-    # big endian
-    img = img.byteswap()
-    write_pfm(os.path.join(
-        CURRENT_DIR, "../../assets/images/{}-b.pfm".format(NAME)), img, 1, '>')
-
-
 def test():
     denoiser = OidnDenoiser()
     img_normal = None
@@ -122,7 +101,7 @@ def test():
             cv.destroyAllWindows()
 
 
-def ui_test():
+def ui_test(args: argparse.Namespace):
     scene_file = os.path.join(
         CURRENT_DIR, "../../assets/ignore/scenes/living-room/scene.xml")
     if (not os.path.exists(scene_file)):
@@ -133,7 +112,7 @@ def ui_test():
     scene: mi.Scene = mi.load_file(scene_file)
     width, height = scene.sensors()[0].film().size()
 
-    ui = UI(width, height)
+    ui = UI(width, height, args.gpu)
 
     oidn_denoiser_on = False
     denoiser = None
@@ -143,7 +122,6 @@ def ui_test():
     update_frame = True
     spp = 1
     use_albedo_and_normal = False
-    oidn_weight_index = 0
 
     while not ui.should_close():
         if (not update_frame):
@@ -186,16 +164,18 @@ def ui_test():
                     'aovs': "albedo:albedo,sh_normal:sh_normal",
                     'integrator': integrator
                 })
-        img = mi.render(scene=scene, spp=spp, seed=seed,
-                        integrator=integrator)
 
-        if (oidn_denoiser_on):
-            img = denoiser.denoise(img, use_albedo_and_normal)
-        else:
-            img = img.torch()
+        if (value_changed or update_frame):
+            img = mi.render(scene=scene, spp=spp, seed=seed,
+                            integrator=integrator)
 
-        # img = tonemap_aces(img)
-        ui.write_texture_gpu(img)
+            if (oidn_denoiser_on):
+                img = denoiser.denoise(img, use_albedo_and_normal)
+            else:
+                img = img.torch()
+
+            # img = tonemap_aces(img)
+            ui.write_texture_gpu(img)
 
         ui.end_frame()
         index += 1
@@ -211,11 +191,12 @@ def ui_test():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--ui", action="store_true", help="run ui test")
+    parser.add_argument("--gpu", action="store_true", help="ui use gpu texture")
     args = parser.parse_args()
 
     parser.print_help()
 
     if args.ui:
-        ui_test()
+        ui_test(args)
     else:
         test()

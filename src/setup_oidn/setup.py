@@ -21,7 +21,7 @@ if sys.platform == "win32":
     ld_flags.append("/LIBPATH:{}/lib/x64/".format(cfg.CUDA_PATH))
     ld_flags.append('cuda.lib')
     ld_flags.append('cudart_static.lib')
-    ld_flags.append('advapi32.lib')
+    # ld_flags.append('advapi32.lib')
 elif sys.platform == "linux":
     ld_flags.append("-L{}/lib64/stubs/".format(cfg.CUDA_PATH))
     ld_flags.append("-lcuda")

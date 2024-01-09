@@ -20,18 +20,18 @@ python prepare.py
 
 + 基本例子
 
-|        module         |    window    |    Linux     |            备注            |
-| :-------------------: | :----------: | :----------: | :------------------------: |
-|   pytorch-cuda-jit    | $\checkmark$ | $\checkmark$ |          直接执行          |
-|   pytorch-optix-jit   | $\checkmark$ | $\checkmark$ |          直接执行          |
-| python-cpp-setuptools | $\checkmark$ | $\checkmark$ |          安装执行          |
-|   python-cpp-cmake    | $\checkmark$ | $\checkmark$ |          安装执行          |
-|      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行<br />（不再更新） |
+|        module         |    window    |    Linux     |                备注                 |
+| :-------------------: | :----------: | :----------: | :---------------------------------: |
+|   pytorch_cuda_jit    | $\checkmark$ | $\checkmark$ |              直接执行               |
+|   pytorch_optix_jit   | $\checkmark$ | $\checkmark$ |              直接执行               |
+| python_cpp_setuptools | $\checkmark$ | $\checkmark$ |              安装执行               |
+|   python_cpp_cmake    | $\checkmark$ | $\checkmark$ |              安装执行               |
+|      cmake_oidn       | $\checkmark$ | $\checkmark$ | 安装执行<br />（更新见 setup 版本） |
 
 + 其他例子
   + 实现功能 optix（`albedo+normal`、`temporal`）
 
-  + cmake-optix 问题：linux 运行报错
+  + cmake_optix 问题：linux 运行报错
 
 
 ```txt
@@ -39,11 +39,11 @@ undefined symbol:
   _ZN3c106detail14torchCheckFailEPKcS2_jRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ```
 
-|   module    |    window    |    Linux     |            备注            |
-| :---------: | :----------: | :----------: | :------------------------: |
-| cmake-optix | $\checkmark$ |              | 安装执行<br />（不再更新） |
-| setup-optix | $\checkmark$ | $\checkmark$ |          安装执行          |
-| setup-oidn  | $\checkmark$ |              |          安装执行          |
+|   module    |    window    |    Linux     |                备注                 |
+| :---------: | :----------: | :----------: | :---------------------------------: |
+| cmake_optix | $\checkmark$ |              | 安装执行<br />（更新见 setup 版本） |
+| setup_optix | $\checkmark$ | $\checkmark$ |              安装执行               |
+| setup-oidn  | $\checkmark$ |              |              安装执行               |
 
 + 测试环境
   + windows
@@ -61,21 +61,21 @@ https://developer.nvidia.com/downloads/designworks/optix/secure/8.0.0/nvidia-opt
 + 直接执行（例子）
 
 ```bash
-python src/pytorch-cuda-jit/test.py
+python src/pytorch_cuda_jit/test.py
 ```
 
 + 安装执行（例子）
 
 ```bash
 # install
-python src/python-cpp-setuptools/install.py
+python src/python_cpp_setuptools/install.py
 # run
-python src/python-cpp-setuptools/test.py
+python src/python_cpp_setuptools/test.py
 ```
 
 
 
-### setup-optix
+### setup_optix
 
 + 运行失败报错 `libGL error: MESA-LOADER: failed to open swrast`，虚拟环境中安装 `gcc`
 
@@ -83,7 +83,7 @@ python src/python-cpp-setuptools/test.py
  conda install -c conda-forge gcc
 ```
 
-+ 注意如果是 `setup-optix` 想要在 `GPU-UI` 模式下运行，执行如下命令
++ 注意如果是 `setup_optix` 想要在 `GPU-UI` 模式下运行，执行如下命令
   + 其中 `CUDA_VISIBLE_DEVICES=0` 表示有多张显卡，选择使用 `id=0` 的
   + 不加环境，直接运行会报错 `CUDA_ERROR`
 

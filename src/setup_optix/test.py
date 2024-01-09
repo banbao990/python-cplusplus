@@ -17,8 +17,7 @@ mi.set_variant("cuda_ad_rgb")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--force_gpu_ui", action="store_true",
-                        help="force to use gpu ui")
+    parser.add_argument("--gpu", action="store_true", help="ui use gpu texture")
     args = parser.parse_args()
     parser.print_help()
     print("\n")
@@ -33,15 +32,7 @@ if __name__ == "__main__":
     scene: mi.Scene = mi.load_file(scene_file)
     width, height = scene.sensors()[0].film().size()
 
-    ui_gpu_on = False
-    if (args.force_gpu_ui):
-        ui_gpu_on = True
-    else:
-        if sys.platform == "win32":
-            ui_gpu_on = True
-        elif sys.platform == "linux":
-            ui_gpu_on = False
-    ui = UI(width, height, ui_gpu_on)
+    ui = UI(width, height, args.gpu)
 
     optix_denoiser_on = False
     denoiser = None

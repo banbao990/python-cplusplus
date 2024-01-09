@@ -8,7 +8,7 @@ import imgui
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class OidDenoiser:
+class OidnDenoiser:
     def __init__(self) -> None:
         oidn.init()
 

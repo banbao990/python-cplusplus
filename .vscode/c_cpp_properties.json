@@ -3,14 +3,14 @@
         {
             "name": "Windows",
             "includePath": [
-                "${workspaceFolder}/src/pytorch-cuda-jit/include",
+                "${workspaceFolder}/src/pytorch_cuda_jit/include",
                 "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.3/include",
                 "C:/Users/admin/anaconda3/envs/mi3/include",
                 "C:/Users/admin/anaconda3/envs/mi3/Lib/site-packages/torch/include",
                 "C:/Users/admin/anaconda3/envs/mi3/Lib/site-packages/torch/include/torch/csrc/api/include",
                 "C:/ProgramData/NVIDIA Corporation/OptiX SDK 8.0.0/include",
-                "${workspaceFolder}/src/cmake-oidn/oidn/oidn-2.1.0.x64.windows/include",
-                "${workspaceFolder}/src/cmake-oidn/oidn/oidn-2.1.0.x86_64.linux/include"
+                "${workspaceFolder}/src/cmake_oidn/oidn/oidn-2.1.0.x64.windows/include",
+                "${workspaceFolder}/src/cmake_oidn/oidn/oidn-2.1.0.x86_64.linux/include"
             ],
             "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.37.32822/bin/Hostx64/x64/cl.exe",
             "defines": [],
