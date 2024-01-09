@@ -10,6 +10,8 @@ dist
 *pyd
 src/**/pybind11
 src/cmake-oidn/oidn
+src/cmake-oidn/weights/
+src/setup_oidn/oidn
 
 assets/ignore/
 imgui.ini

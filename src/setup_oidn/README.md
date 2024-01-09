@@ -4,7 +4,7 @@
 + prepare
 
 ```bash
-python install.py # install oidn_example in local mode 
+python install.py # install setup_oidn in local mode 
 ```
 
 + run

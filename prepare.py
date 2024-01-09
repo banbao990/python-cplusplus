@@ -40,6 +40,7 @@ def deal_with_pybind11(clean, all):
 
     dst_dirs = [
         'src/cmake-oidn/pybind11',
+        "src/csetup_oidn/pybind11"
         'src/python-cpp-cmake/pybind11',
         "src/cmake-optix/pybind11"
     ]

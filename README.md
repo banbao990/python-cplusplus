@@ -20,13 +20,13 @@ python prepare.py
 
 + 基本例子
 
-|        module         |    window    |    Linux     |   备注   |
-| :-------------------: | :----------: | :----------: | :------: |
-|   pytorch-cuda-jit    | $\checkmark$ | $\checkmark$ | 直接执行 |
-|   pytorch-optix-jit   | $\checkmark$ | $\checkmark$ | 直接执行 |
-| python-cpp-setuptools | $\checkmark$ | $\checkmark$ | 安装执行 |
-|   python-cpp-cmake    | $\checkmark$ | $\checkmark$ | 安装执行 |
-|      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行 |
+|        module         |    window    |    Linux     |            备注            |
+| :-------------------: | :----------: | :----------: | :------------------------: |
+|   pytorch-cuda-jit    | $\checkmark$ | $\checkmark$ |          直接执行          |
+|   pytorch-optix-jit   | $\checkmark$ | $\checkmark$ |          直接执行          |
+| python-cpp-setuptools | $\checkmark$ | $\checkmark$ |          安装执行          |
+|   python-cpp-cmake    | $\checkmark$ | $\checkmark$ |          安装执行          |
+|      cmake-oidn       | $\checkmark$ | $\checkmark$ | 安装执行<br />（不再更新） |
 
 + 其他例子
   + 实现功能 optix（`albedo+normal`、`temporal`）
@@ -39,10 +39,11 @@ undefined symbol:
   _ZN3c106detail14torchCheckFailEPKcS2_jRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ```
 
-|   module    |    window    |    Linux     |   备注   |
-| :---------: | :----------: | :----------: | :------: |
-| cmake-optix | $\checkmark$ |              | 安装执行 |
-| setup-optix | $\checkmark$ | $\checkmark$ | 安装执行 |
+|   module    |    window    |    Linux     |            备注            |
+| :---------: | :----------: | :----------: | :------------------------: |
+| cmake-optix | $\checkmark$ |              | 安装执行<br />（不再更新） |
+| setup-optix | $\checkmark$ | $\checkmark$ |          安装执行          |
+| setup-oidn  | $\checkmark$ |              |          安装执行          |
 
 + 测试环境
   + windows
@@ -127,17 +128,13 @@ pip install mitsuba
 + mi 环境中的其他库
 
 ```bash
-# opengl, cuda
-pip install pycuda # 会报错, 解决方案见下面
-
 # tinycudann
 git clone --recursive https://github.com/nvlabs/tiny-cuda-nn
 cd bindings/torch
 python setup.py install
 
 # tqdm, tensorboard
-pip install tqdm
-pip install tensorboard
+pip install tqdm tensorboard
 
 # torch_scatter
 # https://github.com/rusty1s/pytorch_scatter/issues/186
@@ -147,7 +144,7 @@ pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-
 pip install matplotlib
 
 # openexr: linux 必须先执行第一步
-conda install openexr-python
+conda install openexr-python --channel conda-forge
 pip install OpenEXR
 
 # oidn (CPU version)
@@ -158,7 +155,11 @@ pip install oidn
 
 ## 其他问题
 
-### pycuda
+### pycuda(<span style="color:red">deprecated</span>)
+
+```bash
+pip install pycuda # 会报错, 解决方案见下面
+```
 
 + **这个库能够完全被 `cuda-python` 库取代，现在也不用了**
 + 直接 `pip install pycuda` 报错
