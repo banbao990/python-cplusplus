@@ -12,7 +12,7 @@ if os.name == "nt":
     os.add_dll_directory(BIN_DIR)
 elif os.name == "posix":
     os.environ["PATH"] += os.pathsep + BIN_DIR
-    os.environ["LD_LIBRARY_PATH"] += os.pathsep + BIN_DIR
+    os.environ["LD_LIBRARY_PATH"] += os.pathsep + BIN_DIR + os.pathsep
     sys.path.append(BIN_DIR)
 
 # for utils

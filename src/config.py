@@ -15,7 +15,7 @@ elif sys.platform == "linux":
     user_home = os.path.expanduser('~')
     # gcc
     CL_PATH = "/usr/bin"
-    OPTIX_SDK_PATH = "{}/data/jhj/soft/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/".format(
+    OPTIX_SDK_PATH = "{}/soft/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/".format(
         user_home)
     CUDA_PATH = "/usr/local/cuda-12.1"
 ############################# Personal Settings ########################
@@ -39,7 +39,7 @@ _C.PATH = CL_PATH
 def check_user_settings():
     print(
         "\033[93mPlease check your optix settings in the {}\033[00m".format(__file__))
-    print("OptiX SDK Path: {}".format(OPTIX_SDK_PATH))
-    print("Cuda Path: {}".format(CUDA_PATH))
-    print("GCC Path: {}".format(CL_PATH))
+    print("    OptiX SDK Path: {}".format(OPTIX_SDK_PATH))
+    print("    Cuda Path: {}".format(CUDA_PATH))
+    print("    GCC Path: {}".format(CL_PATH))
     print()

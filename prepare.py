@@ -40,7 +40,7 @@ def deal_with_pybind11(clean, all):
 
     dst_dirs = [
         'src/cmake_oidn/pybind11',
-        "src/csetup_oidn/pybind11"
+        "src/setup_oidn/pybind11",
         'src/python_cpp_cmake/pybind11',
         "src/cmake_optix/pybind11"
     ]
@@ -57,6 +57,7 @@ def deal_with_pybind11(clean, all):
         else:
             copy_pybind11_minimal(dst)
 
+
 def deal_with_assets():
     print("\033[92mCopying Assets\033[0m")
 
@@ -72,11 +73,12 @@ def deal_with_assets():
     for scene in scenes:
         scene_src = os.path.join(src_dir, scene)
         scene_dst_dir = os.path.join(dst_dir, scene.split(".")[0])
-        if(os.path.exists(scene_dst_dir)):
+        if (os.path.exists(scene_dst_dir)):
             continue
         print("    unzip {}".format(scene))
         with zipfile.ZipFile(scene_src, 'r') as zip_ref:
             zip_ref.extractall(dst_dir)
+
 
 if __name__ == '__main__':
     argparse = argparse.ArgumentParser()

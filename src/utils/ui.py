@@ -8,7 +8,7 @@ import imgui
 from imgui.integrations.glfw import GlfwRenderer
 
 from cuda import cudart
-
+import argparse
 import numpy as np
 import os
 import sys
@@ -246,6 +246,12 @@ class UI:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gpu", action="store_true")
+    args = parser.parse_args()
+
+    parser.print_help()
+
     mi.set_variant("cuda_ad_rgb")
     bmp: mi.Bitmap = mi.Bitmap(os.path.join(
         CURRENT_DIR, "../../assets/images/100spp.exr"))
@@ -254,12 +260,7 @@ if __name__ == "__main__":
 
     width, height = 1280, 720
 
-    ui_gpu_on = False
-    if sys.platform == "win32":
-        ui_gpu_on = True
-    elif sys.platform == "linux":
-        ui_gpu_on = False
-    ui = UI(width, height, ui_gpu_on)
+    ui = UI(width, height, args.gpu)
 
     while not ui.should_close():
         time.sleep(1 / 60)

@@ -45,7 +45,7 @@ undefined symbol:
 | :---------: | :----------: | :----------: | :---------------------------------: |
 | cmake_optix | $\checkmark$ |              | 安装执行<br />（更新见 setup 版本） |
 | setup_optix | $\checkmark$ | $\checkmark$ |              安装执行               |
-| setup-oidn  | $\checkmark$ |              |              安装执行               |
+| setup-oidn  | $\checkmark$ | $\checkmark$ |              安装执行               |
 
 + 测试环境
   + windows
@@ -91,7 +91,7 @@ python src/python_cpp_setuptools/test.py
 
 ```bash
 # GPU
-CUDA_VISIBLE_DEVICES=0 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia python src/utils/ui.py --force_gpu_ui
+CUDA_VISIBLE_DEVICES=0 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia python src/utils/ui.py --ui
 
 # CPU
 python src/utils/ui.py

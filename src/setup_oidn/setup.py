@@ -48,10 +48,9 @@ if sys.platform == "win32":
     ld_flags.append("OpenImageDenoise.lib")
     ld_flags.append("OpenImageDenoise_core.lib")
 elif sys.platform == "linux":
-    ld_flags.append("-L{}".format(oidn_lib_dir))
-    ld_flags.append("-lOpenImageDenoise")
-    # TODO: fix this
-    # libOpenImageDenoise.so.2.1.0
+    ld_flags.append("{}/{}".format(oidn_lib_dir, "libOpenImageDenoise.so.2.1.0"))
+    # dynamic library load path
+    ld_flags.append("-Wl,-rpath={}".format(oidn_lib_dir))
 
 ext_modules = [
     CUDAExtension(
