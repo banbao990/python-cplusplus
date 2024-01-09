@@ -1,6 +1,10 @@
-from config import _C as cfg
 import os
 import sys
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURRENT_DIR, "../../"))
+sys.path.append(os.path.join(CURRENT_DIR, "../"))
+
+from src.config import _C as cfg
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
@@ -26,8 +30,6 @@ elif sys.platform == "linux":
     ld_flags.append("-L{}/lib64/stubs/".format(cfg.CUDA_PATH))
     ld_flags.append("-lcuda")
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-
 platform_dir = ""
 if sys.platform == "win32":
     platform_dir = "oidn-2.1.0.x64.windows"
@@ -38,7 +40,7 @@ else:
 
 oidn_include_dir = os.path.join(CURRENT_DIR, "oidn/{}/include".format(platform_dir))
 oidn_include_dir = [oidn_include_dir]
-oidn_include_dir.extend(cfg.OIDN_INCLUDE_PATHS.split(";"))
+oidn_include_dir.extend(cfg.INCLUDE_PATHS.split(";"))
 
 oidn_lib_dir = os.path.join(CURRENT_DIR, "oidn/{}/lib".format(platform_dir))
 if sys.platform == "win32":

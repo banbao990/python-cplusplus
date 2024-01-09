@@ -266,7 +266,7 @@ void Denoiser::context_log_cb(unsigned int level,
                               const char *tag,
                               const char *message,
                               void *) {
-    MI_LOG_E("[%2d][%12s]: %s\n", (int)level, tag, message);
+    MI_LOG("[%2d][%12s]: %s\n", (int)level, tag, message);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

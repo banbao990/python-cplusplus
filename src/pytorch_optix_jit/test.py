@@ -10,14 +10,15 @@ import sys
 
 # add module path
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append("{}/../../".format(CURRENT_DIR))
 sys.path.append("{}/../".format(CURRENT_DIR))
 from utils.images import *
 
-from config import _C as cfg
+from src.config import _C as cfg
 
 
 def compile():
-    os.environ['PATH'] = os.environ['PATH'] + os.pathsep + cfg.CL_PATH
+    os.environ['PATH'] = os.environ['PATH'] + os.pathsep + cfg.PATH
     os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
     Debug = False  # compile with debug flag
     verbose = True  # show compile command
@@ -26,8 +27,7 @@ def compile():
     cpp_files = [os.path.join(CURRENT_DIR, file) for file in cpp_files]
     # include directories
     include_dirs = [os.path.join(CURRENT_DIR, "../include")]
-    include_dirs.append(cfg.OPTIX_INCLUDE_PATH)
-    include_dirs.append(cfg.CUDA_INCLUDE_PATH)
+    include_dirs.extend(cfg.INCLUDE_PATHS.split(";"))
     print(include_dirs)
 
     # compile flags

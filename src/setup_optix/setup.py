@@ -1,5 +1,9 @@
-from config import _C as optix_cfg
 import os
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURRENT_DIR, "../"))
+sys.path.append(os.path.join(CURRENT_DIR, "../../"))
+from src.config import _C as optix_cfg
+
 import sys
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
@@ -30,7 +34,7 @@ ext_modules = [
     CUDAExtension(
         name='setup_optix_example',
         sources=['bind.cpp', 'denoiser.cpp', "optix_helper.cpp"],
-        include_dirs=optix_cfg.OPTIX_INCLUDE_PATHS.split(";"),
+        include_dirs=optix_cfg.INCLUDE_PATHS.split(";"),
         extra_compile_args={'cxx': c_flags},
         extra_link_args=ld_flags,
     ),

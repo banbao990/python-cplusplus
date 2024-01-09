@@ -30,16 +30,16 @@ INCLUDE_PATHS = []
 INCLUDE_PATHS.append(os.path.join(OPTIX_SDK_PATH, "include"))
 INCLUDE_PATHS.append(os.path.join(CUDA_PATH, "include"))
 
-_C.OPTIX_INCLUDE_PATHS = ";".join(INCLUDE_PATHS)
-_C.OPTIX_INCLUDE_PATHS = _C.OPTIX_INCLUDE_PATHS.replace("\\", "/")
+_C.INCLUDE_PATHS = ";".join(INCLUDE_PATHS)
+_C.INCLUDE_PATHS = _C.INCLUDE_PATHS.replace("\\", "/")
 _C.CUDA_PATH = CUDA_PATH
 _C.PATH = CL_PATH
 
 
-def check_optix_path():
+def check_user_settings():
     print(
         "\033[93mPlease check your optix settings in the {}\033[00m".format(__file__))
     print("OptiX SDK Path: {}".format(OPTIX_SDK_PATH))
     print("Cuda Path: {}".format(CUDA_PATH))
-    print("CL Path: {}".format(CL_PATH))
+    print("GCC Path: {}".format(CL_PATH))
     print()

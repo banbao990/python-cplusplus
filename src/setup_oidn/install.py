@@ -1,5 +1,10 @@
 import os
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.append(os.path.join(CURRENT_DIR, "../../"))
+from src.config import check_user_settings
+
+check_user_settings()
 
 # download oidn
 cmd = "python {}/download_resources.py".format(CURRENT_DIR)

@@ -12,6 +12,8 @@ python prepare.py
 # python prepare.py --clean --all
 ```
 
++ `src/config.py` 文件是**<span style="color:red">环境配置</span>**，需要根据自己的环境进行配置
+
 
 
 # mi3 环境

@@ -1,7 +1,12 @@
 import os
 import shutil
+import sys
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURRENT_DIR, "../../"))
+from src.config import check_user_settings
+
+check_user_settings()
 
 # copy weights
 weight_src_dir = os.path.join(CURRENT_DIR, "../setup_oidn/weights")

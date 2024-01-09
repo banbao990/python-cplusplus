@@ -76,7 +76,7 @@
 #define MI_LOG_INFO(msg) fprintf(MI_LOG_OUTPUT_FILE, "\033[33m[Info]\033[0m %s\n", msg);
 #define MI_OUTPUT_LINE fprintf(MI_LOG_OUTPUT_FILE, "\033[33m[Info]\033[0m lines: %d\n", __LINE__);
 #ifdef _WIN32
-#define MI_LOG_E(format, ...) fprintf(stderr, "\033[0m[Error]\033[0m "##format, ##__VA_ARGS__);
+#define MI_LOG_E(format, ...) fprintf(stderr, "\033[31m[Error]\033[0m "##format, ##__VA_ARGS__);
 #define MI_LOG(format, ...) fprintf(MI_LOG_OUTPUT_FILE, "\033[33m[Info]\033[0m "##format, ##__VA_ARGS__);
 #elif __linux__
 #define MI_LOG_E(format, ...) fprintf(stderr, format, ##__VA_ARGS__);

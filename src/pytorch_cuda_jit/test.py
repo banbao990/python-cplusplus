@@ -5,11 +5,13 @@ import os
 import sys
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURRENT_DIR, "../../"))
 
-if sys.platform == "win32":
-    CL_PATH = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64"
-    print("add your 'cl.exe' to path, example:\n\t{}".format(CL_PATH))
-    os.environ['PATH'] = os.environ['PATH'] + os.pathsep + CL_PATH
+from src.config import check_user_settings
+check_user_settings()
+from src.config import _C as cfg
+
+os.environ['PATH'] = os.environ['PATH'] + os.pathsep + cfg.PATH
 
 os.environ["TORCH_EXTENSIONS_DIR"] = os.path.join("build")
 Debug = False  # compile with debug flag

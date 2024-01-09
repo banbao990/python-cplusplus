@@ -9,7 +9,11 @@ from setuptools.command.build_ext import build_ext
 
 import torch
 import torch.utils.cpp_extension
-from config import _C as optix_cfg
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append("{}/../../".format(CURRENT_DIR))
+
+from src.config import _C as optix_cfg
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -87,7 +91,7 @@ class CMakeBuild(build_ext):
         cmake_args += [f"-DTORCH_LIBS={';'.join(torch_libs)}"]
 
         cmake_args += ["-DOPTIX_INCLUDE_DIR={}".format(
-            optix_cfg.OPTIX_INCLUDE_PATHS)]
+            optix_cfg.INCLUDE_PATHS)]
 
         if self.compiler.compiler_type != "msvc":
             # Using Ninja-build since it a) is available as a wheel and b)
