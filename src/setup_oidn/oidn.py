@@ -82,3 +82,4 @@ class OidnDenoiser:
 
     def free(self):
         oidn.free_denoiser()
+        torch.cuda.empty_cache()

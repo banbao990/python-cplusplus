@@ -14,6 +14,7 @@ import os
 import sys
 import time
 import mitsuba as mi
+from datetime import datetime
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CURRENT_DIR, "../"))
@@ -94,23 +95,22 @@ class UI:
         # create shader, vao, texture
         self.program = self.create_program()
         self.vao = self.create_vao()
-        self.texture = self.create_texture()
 
-        self.pbo = self.create_pbo(width, height)
-        if self.gpu:
-            cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(
-                int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
-            check_cuda_error(cres)
+        self.texture_size = (-1, -1)
+        self.texture = None
+        self.pbo = None
+        self.bufobj = None
+        self.check_and_update_texture_size(width, height)
 
     def close(self):
         if self.gpu:
             cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
             check_cuda_error(cres)
+            glDeleteBuffers(1, [self.pbo])
 
-        glDeleteProgram(self.program)
-        glDeleteVertexArrays(1, [self.vao])
-        glDeleteBuffers(1, [self.pbo])
         glDeleteTextures(1, [self.texture])
+        glDeleteVertexArrays(1, [self.vao])
+        glDeleteProgram(self.program)
 
         self.impl.shutdown()
         glfw.destroy_window(self.window)
@@ -176,8 +176,7 @@ class UI:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, self.width,
-                     self.height, 0, GL_RGB, GL_FLOAT, None)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, self.texture_size[0], self.texture_size[1], 0, GL_RGB, GL_FLOAT, None)
 
         return texture
 
@@ -198,10 +197,10 @@ class UI:
 
     # img: (height, width, 3) np.float32
     def write_texture_cpu(self, img):
+        self.check_and_update_texture_size(img.shape[1], img.shape[0])
 
         glBindTexture(GL_TEXTURE_2D, self.texture)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.width,
-                        self.height, GL_RGB, GL_FLOAT, img)
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, img)
 
     # img: (height, width, 3) torch.float32
     def write_texture_gpu(self, img):
@@ -209,6 +208,7 @@ class UI:
             self.write_texture_cpu(img.cpu().numpy())
             return
 
+        self.check_and_update_texture_size(img.shape[1], img.shape[0])
         cres, = cudart.cudaGraphicsMapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
         cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(
@@ -222,8 +222,7 @@ class UI:
 
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, int(self.pbo))
         glBindTexture(GL_TEXTURE_2D, self.texture)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.width,
-                        self.height, GL_RGB, GL_FLOAT, ctypes.c_void_p(0))
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, ctypes.c_void_p(0))
 
     def end_frame(self):
         imgui.end()
@@ -244,17 +243,34 @@ class UI:
         glfw.swap_buffers(self.window)
         glfw.poll_events()
 
+    def check_and_update_texture_size(self, width, height):
+        if width == self.texture_size[0] and height == self.texture_size[1]:
+            return
+        if self.gpu:
+            if self.bufobj != None:
+                cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
+                check_cuda_error(cres)
+            if self.pbo != None:
+                glDeleteBuffers(1, [self.pbo])
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--gpu", action="store_true")
-    args = parser.parse_args()
+        if self.texture != None:
+            glDeleteTextures(1, [self.texture])
 
-    parser.print_help()
+        self.texture_size = (width, height)
+        print(self.texture_size)
+        self.texture = self.create_texture()
 
+        if self.gpu:
+            self.pbo = self.create_pbo(self.texture_size[0], self.texture_size[1])
+            cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
+            check_cuda_error(cres)
+
+##########################################################################################
+
+
+def test_ui(args: argparse.Namespace):
     mi.set_variant("cuda_ad_rgb")
-    bmp: mi.Bitmap = mi.Bitmap(os.path.join(
-        CURRENT_DIR, "../../assets/images/100spp.exr"))
+    bmp: mi.Bitmap = mi.Bitmap(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
     img = mi.TensorXf(bmp).torch().to("cuda")[::, ::, 0:3].clone()
     img = tonemap_aces(img)
 
@@ -269,3 +285,123 @@ if __name__ == "__main__":
         ui.end_frame()
 
     ui.close()
+
+
+def test_render(args: argparse.Namespace):
+    mi.set_variant("cuda_ad_rgb")
+
+    scene_file = os.path.join(CURRENT_DIR, "../../assets/ignore/scenes/veach-bidir/scene.xml")
+    if (not os.path.exists(scene_file)):
+        print("\033[91mScene File Not Found, Please Run 'python prepare.py' in the root dir\033[0m")
+        exit(-1)
+
+    scene: mi.Scene = mi.load_file(scene_file)
+    width, height = scene.sensors()[0].film().size()
+
+    ui = UI(width, height, args.gpu)
+
+    use_same_seed = False
+    same_seed = 0
+    index = 0
+    update_frame = True
+    spp = 1
+
+    img = None
+    acc = False
+    img_acc = None
+    num_acc = 0
+    use_tonemapping = True
+    scale = 1.0
+    set2x = False
+    scene_params = mi.traverse(scene)
+    size_ori = (width, height)
+    size_render = size_ori
+
+    while not ui.should_close():
+        if (not update_frame):
+            time.sleep(1 / 60)
+        ui.begin_frame()
+        value_changed = False
+        vc, update_frame = imgui.checkbox("Update Frame", update_frame)
+        value_changed = value_changed or vc
+        vc, spp = imgui.slider_int("spp", spp, 1, 16)
+        value_changed = value_changed or vc
+        vc, acc = imgui.checkbox("Accumulate", acc)
+        if (vc):
+            num_acc = 0
+            img_acc = None
+        imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
+        value_changed = value_changed or vc
+
+        integrator = scene.integrator()
+        vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)
+        value_changed = value_changed or vc
+        seed = index
+        if (vc):
+            same_seed = seed
+        if (use_same_seed):
+            seed = same_seed
+        vc, use_tonemapping = imgui.checkbox("Use Tonemap", use_tonemapping)
+        value_changed = value_changed or vc
+
+        vc2x, set2x = imgui.checkbox("Set 2x", set2x)
+        if set2x:
+            scale = 0.5
+        value_changed = value_changed or vc2x
+
+        vc, scale = imgui.slider_float("Scale", scale, 0.1, 1.0)
+
+        if vc or vc2x:
+            size_render = [int(scale * i) for i in size_ori]
+            scene_params["PerspectiveCamera.film.size"] = size_render
+            scene_params.update()
+        value_changed = value_changed or vc
+
+        imgui.text("Original Size: {} x {}".format(*size_ori))
+        imgui.text("Render Size: {} x {}".format(*size_render))
+
+        if (value_changed or update_frame):
+            img = mi.render(scene=scene, spp=spp, seed=seed,
+                            integrator=integrator)
+
+            img = img.torch()
+
+            if (acc):
+                if (img_acc == None):
+                    img_acc = img[::, ::, 0:3:1]
+                else:
+                    img_acc = img_acc + img[::, ::, 0:3:1]
+                num_acc += 1
+                img[::, ::, 0:3:1] = img_acc / num_acc
+
+            if (use_tonemapping):
+                img = tonemap_aces(img)
+
+            ui.write_texture_gpu(img)
+
+        ui.end_frame()
+        index += 1
+
+    ui.close()
+
+    # add these lines to avoid jit_shutdown() error
+    # we should use the img variable to notifiy the jit compiler
+    result_dir = os.path.join(CURRENT_DIR, "../../results")
+    if (not os.path.exists(result_dir)):
+        os.makedirs(result_dir)
+    timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
+    mi.util.write_bitmap(os.path.join(result_dir, "output-{}.png".format(timestamp)), img)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gpu", action="store_true", help="Write texture on GPU")
+    parser.add_argument("--render", action="store_true", help="Renderer Mode")
+    args = parser.parse_args()
+
+    parser.print_help()
+
+    if args.render:
+        test_render(args)
+    else:
+        test_ui(args)
