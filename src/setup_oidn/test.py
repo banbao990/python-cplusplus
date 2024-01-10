@@ -151,6 +151,10 @@ def ui_test(args: argparse.Namespace):
         if oidn_denoiser_on:
             if denoiser == None:
                 denoiser = OidnDenoiser()
+        if (not oidn_denoiser_on and denoiser != None):
+            if imgui.button("Free OIDN"):
+                denoiser.free()
+                denoiser = None
         value_changed = value_changed or vc
 
         # aux

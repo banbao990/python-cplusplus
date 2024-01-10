@@ -2,10 +2,21 @@
 #include "utils.h"
 #include <iostream>
 #include <filesystem>
+#include <memory>
 
-OidnDenoiser *OidnDenoiser::get_instance() {
-    static OidnDenoiser s_instance;
-    return &s_instance;
+std::shared_ptr<OidnDenoiser> OidnDenoiser::s_instance = nullptr;
+
+std::shared_ptr<OidnDenoiser> OidnDenoiser::get_instance() {
+    if (OidnDenoiser::s_instance.get() == nullptr) {
+        OidnDenoiser::s_instance = std::shared_ptr<OidnDenoiser>(new OidnDenoiser());
+    }
+    return OidnDenoiser::s_instance;
+}
+
+void OidnDenoiser::free_instance() {
+    if (OidnDenoiser::s_instance.get() != nullptr) {
+        OidnDenoiser::s_instance.reset();
+    }
 }
 
 OidnDenoiser::OidnDenoiser() {

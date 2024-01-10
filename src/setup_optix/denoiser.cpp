@@ -1,8 +1,18 @@
 #include "denoiser.h"
 
-Denoiser *Denoiser::get_instance() {
-    static Denoiser s_instance;
-    return &s_instance;
+std::shared_ptr<Denoiser> Denoiser::s_instance = nullptr;
+
+std::shared_ptr<Denoiser> Denoiser::get_instance() {
+    if (Denoiser::s_instance.get() == nullptr) {
+        Denoiser::s_instance = std::shared_ptr<Denoiser>(new Denoiser());
+    }
+    return Denoiser::s_instance;
+}
+
+void Denoiser::free_instance() {
+    if (Denoiser::s_instance.get() != nullptr) {
+        Denoiser::s_instance.reset();
+    }
 }
 
 Denoiser::Denoiser() {

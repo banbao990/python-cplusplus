@@ -6,6 +6,7 @@
 
 #include "optix_helper.h"
 #include <iostream>
+#include <memory>
 
 class Denoiser {
 private:
@@ -33,6 +34,7 @@ private:
 
 private:
     Denoiser();
+    static std::shared_ptr<Denoiser> s_instance;
 
 public:
     // Delete copy constructor and assignment operator
@@ -40,7 +42,8 @@ public:
     Denoiser &operator=(const Denoiser &) = delete;
 
     // Singleton
-    static Denoiser *get_instance();
+    static std::shared_ptr<Denoiser> get_instance();
+    static void free_instance();
     ~Denoiser();
     void init();
     void resize(const int3 size, const bool aux = false, const bool temporal = false);

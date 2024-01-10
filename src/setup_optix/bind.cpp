@@ -42,7 +42,7 @@ torch::Tensor optix_denoise(const torch::Tensor &noisy, bool aux, bool temporal)
 
     assert(element_size == sizeof(float3) || element_size == sizeof(float4));
 
-    Denoiser *denoiser = Denoiser::get_instance();
+    std::shared_ptr<Denoiser> denoiser = Denoiser::get_instance();
     denoiser->resize({width, height, element_size}, aux, temporal);
     if (aux) {
         const torch::Tensor color = noisy.slice(2, 0, channels).clone();
@@ -54,8 +54,14 @@ torch::Tensor optix_denoise(const torch::Tensor &noisy, bool aux, bool temporal)
     }
 }
 
+void free_denoiser() {
+    std::shared_ptr<Denoiser> denoiser = Denoiser::get_instance();
+    denoiser->free_instance();
+}
+
 PYBIND11_MODULE(setup_optix_example, m) {
     m.def("denoise", &optix_denoise, "Optix Denoiser");
+    m.def("free_denoiser", &free_denoiser, "Free Optix Denoiser");
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else

@@ -79,3 +79,6 @@ class OidnDenoiser:
             value_changed = value_changed or vc
 
         return value_changed, use_albedo_and_normal
+
+    def free(self):
+        oidn.free_denoiser()

@@ -55,8 +55,11 @@ if __name__ == "__main__":
         vc, update_frame = imgui.checkbox("Update Frame", update_frame)
         value_changed = value_changed or vc
         vc, spp = imgui.slider_int("spp", spp, 1, 16)
-        vc, optix_denoiser_on = imgui.checkbox(
-            "Optix Denoiser On", optix_denoiser_on)
+        vc, optix_denoiser_on = imgui.checkbox("Optix Denoiser On", optix_denoiser_on)
+        if(not optix_denoiser_on and denoiser != None):
+            if imgui.button("Free Denoiser"):
+                denoiser.free()
+                denoiser = None
         value_changed = value_changed or vc
         vc, acc = imgui.checkbox("Accumulate", acc)
         if (vc):
@@ -65,11 +68,10 @@ if __name__ == "__main__":
         imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
         value_changed = value_changed or vc
 
-        if (denoiser == None):
-            denoiser = OptixDenoiser()
-
         integrator = scene.integrator()
         if (optix_denoiser_on):
+            if (denoiser == None):
+                denoiser = OptixDenoiser()
             vc, integrator = denoiser.render_ui(integrator)
 
         vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)

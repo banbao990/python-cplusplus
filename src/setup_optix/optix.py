@@ -14,6 +14,10 @@ class OptixDenoiser:
         img = self.module.denoise(noisy, self.aux, self.temporal)
         return img
 
+    def free(self):
+        self.module.free_denoiser()
+        torch.cuda.empty_cache()
+
     def render_ui(self, integrator):
         value_changed = False
         if imgui.tree_node("Denoise Options", imgui.TREE_NODE_DEFAULT_OPEN):

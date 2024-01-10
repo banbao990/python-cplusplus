@@ -3,6 +3,7 @@
 #include <OpenImageDenoise/oidn.hpp>
 #include <vector>
 #include <string>
+#include <memory>
 
 enum OidnMode {
     NONE,
@@ -24,9 +25,11 @@ public:
     void denoise(float *color, float *normal, float *albedo, float *output, int width, int height, int channels);
     void add_set_weights_task(std::string &weight_path);
 
-    static OidnDenoiser *get_instance();
+    static std::shared_ptr<OidnDenoiser> OidnDenoiser::get_instance();
+    static void free_instance();
 
 private:
+    static std::shared_ptr<OidnDenoiser> s_instance;
     oidn::DeviceRef m_oidn_device;
     oidn::FilterRef m_filter;
     OidnMode m_mode = OidnMode::NONE;
