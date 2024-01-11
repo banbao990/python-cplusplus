@@ -16,37 +16,13 @@ import time
 import mitsuba as mi
 from datetime import datetime
 
+
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CURRENT_DIR, "../"))
 from utils.my_queues import FixedSizeQueue
 from utils.images import tonemap_aces
-
-VERTEX_SHADER = """
-#version 330 core
-
-layout(location = 0) in vec2 aPos;
-layout(location = 1) in vec2 aTexCoords;
-
-out vec2 texCoords;
-
-void main() {
-    gl_Position = vec4(aPos, 0.0, 1.0);
-    texCoords = aTexCoords;
-}
-"""
-
-FRAGMENT_SHADER = """
-#version 330 core
-
-out vec4 FragColor;
-
-in vec2 texCoords;
-uniform sampler2D Image;
-
-void main() {
-    FragColor = texture(Image, texCoords);
-}
-"""
+from utils.ogl.gl_helper import OpenGLHelper as glh
+from utils.ogl.compute_task import ComputeTask, ComputeTaskTest
 
 
 def check_cuda_error(cres: cudart.cudaError_t):
@@ -56,7 +32,6 @@ def check_cuda_error(cres: cudart.cudaError_t):
 
 
 class UI:
-
     def __init__(self, width, height, gpu: bool = False, name="Simple UI"):
         print("[UI] Write texture on GPU: {}".format(gpu))
         self.gpu = gpu
@@ -70,7 +45,8 @@ class UI:
             print("Failed to initialize GLFW")
             exit()
 
-        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+        # for compute shader test
+        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
         glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
@@ -102,6 +78,8 @@ class UI:
         self.bufobj = None
         self.check_and_update_texture_size(width, height)
 
+        self.compute_task = None
+
     def close(self):
         if self.gpu:
             cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
@@ -117,10 +95,10 @@ class UI:
         glfw.terminate()
 
     def create_program(self):
-        vertex = OpenGL.GL.shaders.compileShader(
-            VERTEX_SHADER, GL_VERTEX_SHADER)
-        fragment = OpenGL.GL.shaders.compileShader(
-            FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+        vertex_shader_str = glh.load_shader_file("quad/quad.vert")
+        fragment_shader_str = glh.load_shader_file("quad/quad.frag")
+        vertex = OpenGL.GL.shaders.compileShader(vertex_shader_str, GL_VERTEX_SHADER)
+        fragment = OpenGL.GL.shaders.compileShader(fragment_shader_str, GL_FRAGMENT_SHADER)
 
         return OpenGL.GL.shaders.compileProgram(vertex, fragment)
 
@@ -169,14 +147,16 @@ class UI:
     def create_texture(self):
 
         texture = glGenTextures(1)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, texture)
-
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, self.texture_size[0], self.texture_size[1], 0, GL_RGB, GL_FLOAT, None)
+        # TODO: RGB or RGBA
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, self.texture_size[0], self.texture_size[1], 0, GL_RGBA, GL_FLOAT, None)
+        glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F)
 
         return texture
 
@@ -204,6 +184,8 @@ class UI:
 
     # img: (height, width, 3) torch.float32
     def write_texture_gpu(self, img):
+        # return
+        # TODO: compute shader test
         if not self.gpu:
             self.write_texture_cpu(img.cpu().numpy())
             return
@@ -230,18 +212,29 @@ class UI:
         imgui.render()
         imgui.end_frame()
 
+        if self.compute_task != None:
+            self.compute_task.run(group_size=self.texture_size, tex_input=self.texture)
+
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         glUseProgram(self.program)
-        glBindVertexArray(self.vao)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture)
+        glUniform1i(glGetUniformLocation(self.program, "Image"), 0)
+        glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
         self.impl.render(imgui.get_draw_data())
         self.impl.process_inputs()
         glfw.swap_buffers(self.window)
         glfw.poll_events()
+
+        # check errors
+        err = glGetError()
+        while (err != GL_NO_ERROR):
+            print(err)
+            err = glGetError()
 
     def check_and_update_texture_size(self, width, height):
         if width == self.texture_size[0] and height == self.texture_size[1]:
@@ -257,7 +250,6 @@ class UI:
             glDeleteTextures(1, [self.texture])
 
         self.texture_size = (width, height)
-        print(self.texture_size)
         self.texture = self.create_texture()
 
         if self.gpu:
@@ -265,7 +257,26 @@ class UI:
             cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
             check_cuda_error(cres)
 
+    def print_opengl_infos(self):
+        glh.print_opengl_infos()
+
+    def set_compute_task(self, task: ComputeTask):
+        if self.compute_task != None:
+            self.compute_task.release()
+        self.compute_task = task
+
+    def compute_task_test(self):
+        self.set_compute_task(ComputeTaskTest())
+
 ##########################################################################################
+
+
+def save_img(img, num_acc: int = 0):
+    result_dir = os.path.join(CURRENT_DIR, "../../results")
+    if (not os.path.exists(result_dir)):
+        os.makedirs(result_dir)
+    timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
+    mi.util.write_bitmap(os.path.join(result_dir, "output-{}-{}.png".format(timestamp, num_acc)), img)
 
 
 def test_ui(args: argparse.Namespace):
@@ -316,6 +327,7 @@ def test_render(args: argparse.Namespace):
     scene_params = mi.traverse(scene)
     size_ori = (width, height)
     size_render = size_ori
+    compute_task_test = False
 
     while not ui.should_close():
         if (not update_frame):
@@ -343,6 +355,16 @@ def test_render(args: argparse.Namespace):
             seed = same_seed
         vc, use_tonemapping = imgui.checkbox("Use Tonemap", use_tonemapping)
         value_changed = value_changed or vc
+        save = imgui.button("Save")
+
+        vc, compute_task_test = imgui.checkbox("Compute Task Test", compute_task_test)
+        if (vc):
+            if (compute_task_test):
+                ui.compute_task_test()
+            else:
+                ui.set_compute_task(None)
+        if (ui.compute_task != None):
+            ui.compute_task.render_ui()
 
         vc2x, set2x = imgui.checkbox("Set 2x", set2x)
         if set2x:
@@ -355,10 +377,15 @@ def test_render(args: argparse.Namespace):
             size_render = [int(scale * i) for i in size_ori]
             scene_params["PerspectiveCamera.film.size"] = size_render
             scene_params.update()
+            num_acc = 0
+            img_acc = None
         value_changed = value_changed or vc
 
         imgui.text("Original Size: {} x {}".format(*size_ori))
         imgui.text("Render Size: {} x {}".format(*size_render))
+
+        if (imgui.button("Check OpenGL Infos")):
+            ui.print_opengl_infos()
 
         if (value_changed or update_frame):
             img = mi.render(scene=scene, spp=spp, seed=seed,
@@ -374,6 +401,9 @@ def test_render(args: argparse.Namespace):
                 num_acc += 1
                 img[::, ::, 0:3:1] = img_acc / num_acc
 
+            if save:
+                save_img(img, num_acc)
+
             if (use_tonemapping):
                 img = tonemap_aces(img)
 
@@ -386,11 +416,7 @@ def test_render(args: argparse.Namespace):
 
     # add these lines to avoid jit_shutdown() error
     # we should use the img variable to notifiy the jit compiler
-    result_dir = os.path.join(CURRENT_DIR, "../../results")
-    if (not os.path.exists(result_dir)):
-        os.makedirs(result_dir)
-    timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
-    mi.util.write_bitmap(os.path.join(result_dir, "output-{}.png".format(timestamp)), img)
+    save_img(img, num_acc)
 
 
 if __name__ == "__main__":

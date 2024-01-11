@@ -1,0 +1,33 @@
+#version 430 core
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// ----------------------------------------------------------------------------
+//
+// uniforms
+//
+// ----------------------------------------------------------------------------
+
+layout(rgba32f, binding = 0) uniform image2D img_output;
+
+// v3: center, v1: radius
+layout(location = 0) uniform vec4 highlight_control;
+
+// ----------------------------------------------------------------------------
+//
+// functions
+//
+// ----------------------------------------------------------------------------
+
+void main() {
+    ivec2 texel_coord = ivec2(gl_GlobalInvocationID.xy);
+    vec2 texel_coord_rel = vec2(texel_coord) / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+
+    if (length(highlight_control.xy - texel_coord_rel.xy) < highlight_control.z) {
+        return;
+    }
+
+    vec4 value = vec4(0.0, 0.0, 0.0, 1.0);
+    // value.xy = texel_coord_rel;
+    imageStore(img_output, texel_coord, value);
+}

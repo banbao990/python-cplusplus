@@ -46,10 +46,11 @@ undefined symbol:
 | cmake_optix | $\checkmark$ |              | 安装执行<br />（更新见 setup 版本） |
 | setup_optix | $\checkmark$ | $\checkmark$ |              安装执行               |
 | setup-oidn  | $\checkmark$ | $\checkmark$ |              安装执行               |
+|  setup-NIS  |              |              |  安装执行<br />Nvidia Image Scale   |
 
 + 测试环境
   + windows
-    + cuda 12.3、optix SDK 8.0.0、cmake 3.25.1
+    + cuda 12.3、optix SDK 8.0.0、cmake 3.25.1、vulkan 1.3.236.0
   + linux
     + cuda 12.1、optix SDK 8.0.0、cmake 3.25.1
 + Optix SDK：[Link](https://developer.nvidia.com/designworks/optix/download)
@@ -151,6 +152,12 @@ pip install OpenEXR
 
 # oidn (CPU version)
 pip install oidn
+
+# 导出成 exe(巨慢, 也没用了)
+pip install pyinstaller
+
+# 测试 compute shader 的时候用的一个库
+pip install arcade
 ```
 
 
