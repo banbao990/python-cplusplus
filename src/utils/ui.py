@@ -144,7 +144,7 @@ class UI:
 
         return pbo
 
-    def create_texture(self):
+    def create_texture(self, width, height):
 
         texture = glGenTextures(1)
         glActiveTexture(GL_TEXTURE0)
@@ -155,7 +155,7 @@ class UI:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         # TODO: RGB or RGBA
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, self.texture_size[0], self.texture_size[1], 0, GL_RGBA, GL_FLOAT, None)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, None)
         glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F)
 
         return texture
@@ -220,7 +220,10 @@ class UI:
 
         glUseProgram(self.program)
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.texture)
+        if self.compute_task != None and "output_texture" in self.compute_task.__dict__:
+            glBindTexture(GL_TEXTURE_2D, self.compute_task.output_texture)
+        else:
+            glBindTexture(GL_TEXTURE_2D, self.texture)
         glUniform1i(glGetUniformLocation(self.program, "Image"), 0)
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 6)
@@ -250,18 +253,20 @@ class UI:
             glDeleteTextures(1, [self.texture])
 
         self.texture_size = (width, height)
-        self.texture = self.create_texture()
+        self.texture = self.create_texture(*self.texture_size)
 
         if self.gpu:
             self.pbo = self.create_pbo(self.texture_size[0], self.texture_size[1])
             cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
             check_cuda_error(cres)
 
+        # TODO: cue compute shader
+
     def print_opengl_infos(self):
         glh.print_opengl_infos()
 
-    def set_compute_task(self, task: ComputeTask):
-        if self.compute_task != None:
+    def set_compute_task(self, task: ComputeTask, release: bool = True):
+        if self.compute_task != None and release:
             self.compute_task.release()
         self.compute_task = task
 
@@ -365,6 +370,7 @@ def test_render(args: argparse.Namespace):
                 ui.set_compute_task(None)
         if (ui.compute_task != None):
             ui.compute_task.render_ui()
+        value_changed = value_changed or vc
 
         vc2x, set2x = imgui.checkbox("Set 2x", set2x)
         if set2x:

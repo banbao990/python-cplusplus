@@ -21,13 +21,16 @@ class ComputeTask(object):
     def render_ui(self):
         raise NotImplementedError
 
+    def set(self, **kwargs):
+        raise NotImplementedError
+
     def release(self):
         glDeleteProgram(self.program)
 
 
 class ComputeTaskTest(ComputeTask):
     def __init__(self):
-        super().__init__("Test", "samples/compute1.comp")
+        super().__init__("Test", "samples/highlight.comp")
         self.center = [0.5, 0.5]
         self.radius = 0.1
 

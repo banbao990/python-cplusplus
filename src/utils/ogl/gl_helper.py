@@ -38,12 +38,12 @@ class OpenGLHelper(object):
         if compile:
             if (glGetShaderiv(shader, GL_COMPILE_STATUS) != GL_TRUE):
                 err_str = glGetShaderInfoLog(shader)
-                OpenGLHelper.print_error("[Compile] :{}".format(err_str))
+                OpenGLHelper.print_error("[Compile] :{}".format(err_str.decode()))
                 ret = False
         else:
             if glGetProgramiv(shader, GL_LINK_STATUS) != GL_TRUE:
                 err_str = glGetProgramInfoLog(shader)
-                OpenGLHelper.print_error("[Link] :{}".format(err_str))
+                OpenGLHelper.print_error("[Link] :{}".format(err_str.decode()))
                 ret = False
 
     @staticmethod
