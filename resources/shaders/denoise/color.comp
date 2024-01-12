@@ -3,23 +3,23 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // ----------------------------------------------------------------------------
-//
 // uniforms
-//
 // ----------------------------------------------------------------------------
+#define EPS 1e-6
 
 layout(rgba32f, binding = 0) uniform image2D img_input;
 layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(location = 0) uniform ivec4 v1;
+layout(location = 1) uniform vec4 v2;
 
 #define g_kernel_size v1.x
 #define g_kernel_type v1.y
 #define g_use_tonemapping v1.z
 
+#define g_sigma v2.x
+
 // ----------------------------------------------------------------------------
-//
 // functions
-//
 // ----------------------------------------------------------------------------
 
 vec3 tonemap_aces(vec3 value) {
@@ -34,24 +34,116 @@ vec3 tonemap_aces(vec3 value) {
     return value;
 }
 
+bool outside(ivec2 coord, ivec2 image_size) {
+    return coord.x < 0 || coord.x >= image_size.x || coord.y < 0 || coord.y >= image_size.y;
+}
+
+vec3 average_filter(ivec2 texel_coord) {
+    const int kernel_size = g_kernel_size - 1;
+
+    vec3 value = vec3(0.0, 0.0, 0.0);
+    int count = 0;
+    const ivec2 image_size = imageSize(img_input).xy;
+    for (int i = -kernel_size; i <= kernel_size; ++i) {
+        for (int j = -kernel_size; j <= kernel_size; ++j) {
+            ivec2 coord = texel_coord + ivec2(i, j);
+            if (outside(coord, image_size)) {
+                continue;
+            }
+            value += imageLoad(img_input, coord).xyz;
+            ++count;
+        }
+    }
+    return value / float(count);
+}
+
+vec3 gaussian_filter(ivec2 texel_coord) {
+    // 2 sigma: 0.9544
+    const int kernel_size = int(ceil(g_sigma * 2.0));
+    const float div = max(2.0 * g_sigma * g_sigma, EPS);
+    const ivec2 image_size = imageSize(img_input).xy;
+
+    vec3 value = vec3(0.0, 0.0, 0.0);
+    float weight_sum = 0.0;
+    for (int i = -kernel_size; i <= kernel_size; ++i) {
+        for (int j = -kernel_size; j <= kernel_size; ++j) {
+            ivec2 coord = texel_coord + ivec2(i, j);
+            if (outside(coord, image_size)) {
+                continue;
+            }
+            float weight = exp(-(float(i * i + j * j)) / div);
+            value += imageLoad(img_input, texel_coord + ivec2(i, j)).xyz * weight;
+            weight_sum += weight;
+        }
+    }
+    return value / weight_sum;
+}
+
+vec3 median_filter(ivec2 texel_coord) {
+    const int kernel_size = g_kernel_size - 1;
+    const ivec2 image_size = imageSize(img_input).xy;
+
+    vec3 value = vec3(0.0, 0.0, 0.0);
+    int count = 0;
+    // !!!!pack index into metric!!!!
+    const int IDX_MAX = 128;
+    const int METRIC_MIN = 1024;
+    float metric[81];
+    int idx = -1;
+    for (int i = -kernel_size; i <= kernel_size; ++i) {
+        for (int j = -kernel_size; j <= kernel_size; ++j) {
+            ivec2 coord = texel_coord + ivec2(i, j);
+            idx++;
+            if (outside(coord, image_size)) {
+                continue;
+            }
+            vec3 v = imageLoad(img_input, coord).xyz;
+            // dot metric
+            float m = dot(v, v);
+            // know that idx < 81 < 128
+            metric[count] = floor(m * METRIC_MIN) * IDX_MAX + idx;
+            ++count;
+        }
+    }
+
+    // simple use the bubble sort
+    for (int i = count - 1; i > 0; --i) {
+        for (int j = 0; j < i; ++j) {
+            if (metric[j] > metric[j + 1]) {
+                float tmp = metric[j];
+                metric[j] = metric[j + 1];
+                metric[j + 1] = tmp;
+            }
+        }
+    }
+
+    int median_idx = int(metric[count / 2]) % IDX_MAX;
+    ivec2 median_coord = texel_coord + ivec2(median_idx / (kernel_size * 2 + 1) - kernel_size, median_idx % (kernel_size * 2 + 1) - kernel_size);
+    value = imageLoad(img_input, median_coord).xyz;
+    return value;
+}
+
 void main() {
     ivec2 texel_coord = ivec2(gl_GlobalInvocationID.xy);
     vec3 value = vec3(0.0, 0.0, 0.0);
-    // None
-    if (g_kernel_type == 0) {
-        value = imageLoad(img_input, texel_coord).xyz;
-    }
-    // Average
-    else if (g_kernel_type == 1) {
-        int kernel_size = g_kernel_size - 1;
-        for (int i = -kernel_size; i <= kernel_size; ++i) {
-            for (int j = -kernel_size; j <= kernel_size; ++j) {
-                value += imageLoad(img_input, texel_coord + ivec2(i, j)).xyz;
-            }
+    // Kernel
+    {
+        // None
+        if (g_kernel_type == 0) {
+            value = imageLoad(img_input, texel_coord).xyz;
         }
-        int samples = (2 * kernel_size + 1);
-        samples *= samples;
-        value /= samples;
+        // Average
+        else if (g_kernel_type == 1) {
+            value = average_filter(texel_coord);
+        }
+        // Gaussian
+        else if (g_kernel_type == 2) {
+            value = gaussian_filter(texel_coord);
+        }
+        // Median
+        else if (g_kernel_type == 3) {
+            value = median_filter(texel_coord);
+        }
     }
 
     // Tone Mapping

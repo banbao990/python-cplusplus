@@ -49,6 +49,8 @@ def test_render(args: argparse.Namespace):
     acc = False
     img_acc = None
     num_acc = 0
+    max_acc = 0
+    stop_render_when_max_acc = True
     use_tonemapping = True
     denoise_on = False
     denoise_task = None
@@ -66,13 +68,23 @@ def test_render(args: argparse.Namespace):
         if (vc):
             num_acc = 0
             img_acc = None
-        imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
         value_changed = value_changed or vc
+        if (acc):
+            vc, stop_render_when_max_acc = imgui.checkbox("Stop Render When Max Acc", stop_render_when_max_acc)
+            value_changed = value_changed or vc
+            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 100)
+            if (vc):
+                # force update frame, as we stop update frame when max_acc is reached
+                update_frame = True
+                num_acc = 0
+                img_acc = None
+            value_changed = value_changed or vc
+            imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
 
         integrator = scene.integrator()
         vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)
         value_changed = value_changed or vc
-        seed = index
+        seed = index + int(time.time())
         if (vc):
             same_seed = seed
         if (use_same_seed):
@@ -101,9 +113,13 @@ def test_render(args: argparse.Namespace):
             if (acc):
                 if (img_acc == None):
                     img_acc = img[::, ::, 0:3:1]
-                else:
+                    num_acc = 1
+                elif (max_acc == 0 or (num_acc + 1 < max_acc)):
                     img_acc = img_acc + img[::, ::, 0:3:1]
-                num_acc += 1
+                    num_acc += 1
+                else:
+                    # save compute resource
+                    update_frame = False or not stop_render_when_max_acc
                 img[::, ::, 0:3:1] = img_acc / num_acc
 
             if save:
