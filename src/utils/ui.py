@@ -129,6 +129,8 @@ class UI:
                               quad.itemsize, ctypes.c_void_p(2 * quad.itemsize))
         glEnableVertexAttribArray(1)
 
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
         glDeleteBuffers(1, [vbo])
 
@@ -154,9 +156,8 @@ class UI:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-        # TODO: RGB or RGBA
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, None)
-        glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
         return texture
 
@@ -181,11 +182,10 @@ class UI:
 
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, img)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
     # img: (height, width, 3) torch.float32
     def write_texture_gpu(self, img):
-        # return
-        # TODO: compute shader test
         if not self.gpu:
             self.write_texture_cpu(img.cpu().numpy())
             return
@@ -193,18 +193,18 @@ class UI:
         self.check_and_update_texture_size(img.shape[1], img.shape[0])
         cres, = cudart.cudaGraphicsMapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
-        cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(
-            self.bufobj)
+        cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(self.bufobj)
         check_cuda_error(cres)
-        cres, = cudart.cudaMemcpy(
-            ptr, img.data_ptr(), size, cudart.cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+        cres, = cudart.cudaMemcpy(ptr, img.data_ptr(), size, cudart.cudaMemcpyKind.cudaMemcpyDeviceToDevice)
         check_cuda_error(cres)
         cres, = cudart.cudaGraphicsUnmapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
 
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, int(self.pbo))
         glBindTexture(GL_TEXTURE_2D, self.texture)
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, int(self.pbo))
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, ctypes.c_void_p(0))
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
     def end_frame(self):
         imgui.end()
@@ -215,6 +215,8 @@ class UI:
         if self.compute_task != None:
             self.compute_task.run(group_size=self.texture_size, tex_input=self.texture)
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -224,7 +226,9 @@ class UI:
             glBindTexture(GL_TEXTURE_2D, self.compute_task.output_texture)
         else:
             glBindTexture(GL_TEXTURE_2D, self.texture)
+        glBindImageTexture(0, self.texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F)
         glUniform1i(glGetUniformLocation(self.program, "Image"), 0)
+
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
@@ -233,11 +237,11 @@ class UI:
         glfw.swap_buffers(self.window)
         glfw.poll_events()
 
-        # check errors
-        err = glGetError()
-        while (err != GL_NO_ERROR):
-            print(err)
-            err = glGetError()
+        glBindVertexArray(0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glUseProgram(0)
+
+        glh.check_errors()
 
     def check_and_update_texture_size(self, width, height):
         if width == self.texture_size[0] and height == self.texture_size[1]:

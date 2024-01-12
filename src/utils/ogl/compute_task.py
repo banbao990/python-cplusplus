@@ -54,6 +54,7 @@ class ComputeTaskTest(ComputeTask):
         glDispatchCompute(*group_size)
         # make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+        glUseProgram(0)
 
     def render_ui(self):
         value_changed = False

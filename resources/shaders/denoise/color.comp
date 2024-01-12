@@ -9,9 +9,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 // ----------------------------------------------------------------------------
 
 layout(rgba32f, binding = 0) uniform image2D img_input;
-// layout(rgba32f, location = 1) uniform image2D img_output;
-#define img_output img_input
-
+layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(location = 0) uniform ivec4 v1;
 
 #define g_kernel_size v1.x

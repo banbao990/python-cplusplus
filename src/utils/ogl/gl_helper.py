@@ -83,3 +83,12 @@ class OpenGLHelper(object):
         print("  Max Compute Work Group Invocations: {}".format(
             OpenGLHelper.get_integer(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS))
         )
+
+    @staticmethod
+    def check_errors():
+        ret = False
+        err = glGetError()
+        if err != GL_NO_ERROR:
+            print("OpenGL Error: {}".format(err))
+            ret = True
+        return ret
