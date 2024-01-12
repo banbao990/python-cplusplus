@@ -115,3 +115,8 @@ class Filters(ComputeTask):
             imgui.tree_pop()
 
         return value_changed
+
+    def resize(self, width, height):
+        if self.output_texture is not None:
+            glDeleteTextures(1, [self.output_texture])
+        self.output_texture = self.create_texture(width, height)

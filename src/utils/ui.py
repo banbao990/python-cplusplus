@@ -76,9 +76,9 @@ class UI:
         self.texture = None
         self.pbo = None
         self.bufobj = None
-        self.check_and_update_texture_size(width, height)
-
         self.compute_task = None
+
+        self.check_and_update_texture_size(width, height)
 
     def close(self):
         if self.gpu:
@@ -122,11 +122,9 @@ class UI:
         glBindBuffer(GL_ARRAY_BUFFER, vbo)
         glBufferData(GL_ARRAY_BUFFER, quad.nbytes, quad, GL_STATIC_DRAW)
 
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 *
-                              quad.itemsize, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * quad.itemsize, ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 *
-                              quad.itemsize, ctypes.c_void_p(2 * quad.itemsize))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * quad.itemsize, ctypes.c_void_p(2 * quad.itemsize))
         glEnableVertexAttribArray(1)
 
         glBindBuffer(GL_ARRAY_BUFFER, 0)
@@ -222,7 +220,7 @@ class UI:
 
         glUseProgram(self.program)
         glActiveTexture(GL_TEXTURE0)
-        if self.compute_task != None and "output_texture" in self.compute_task.__dict__:
+        if self.compute_task != None and hasattr(self.compute_task, "output_texture"):
             glBindTexture(GL_TEXTURE_2D, self.compute_task.output_texture)
         else:
             glBindTexture(GL_TEXTURE_2D, self.texture)
@@ -264,7 +262,9 @@ class UI:
             cres, self.bufobj = cudart.cudaGraphicsGLRegisterBuffer(int(self.pbo), cudart.cudaGraphicsRegisterFlags(0))
             check_cuda_error(cres)
 
-        # TODO: cue compute shader
+        # cue compute task
+        if self.compute_task != None and (hasattr(self.compute_task, "resize")):
+            self.compute_task.resize(*self.texture_size)
 
     def print_opengl_infos(self):
         glh.print_opengl_infos()
