@@ -76,7 +76,7 @@ def test_render(args: argparse.Namespace):
         if (acc):
             vc, stop_render_when_max_acc = imgui.checkbox("Stop Render When Max Acc", stop_render_when_max_acc)
             value_changed = value_changed or vc
-            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 1000)
+            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 500)
             if (vc):
                 # force update frame, as we stop update frame when max_acc is reached
                 update_frame = True
