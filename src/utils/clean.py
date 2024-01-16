@@ -6,7 +6,9 @@ import glob
 def clean_build_and_uninstall(lib_name: str, root_dir: str):
     # clean
     clear_dirs = ["build", "dist", "{}.egg-info".format(lib_name)]
+
     for dir in clear_dirs:
+        dir = os.path.join(root_dir, dir)
         if os.path.exists(dir):
             shutil.rmtree(dir)
 

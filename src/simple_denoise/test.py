@@ -14,7 +14,7 @@ CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CURRENT_DIR, "../"))
 from utils.images import tonemap_aces
 from utils.ogl.gl_helper import OpenGLHelper as glh
-from simple_denoise.filter import Filters
+from simple_denoise.filter import FilterTasks
 from utils.ui import UI
 
 
@@ -66,8 +66,7 @@ def test_render(args: argparse.Namespace):
             time.sleep(1 / 60)
         ui.begin_frame()
         value_changed = False
-        vc, update_frame = imgui.checkbox("Update Frame", update_frame)
-        value_changed = value_changed or vc
+        _, update_frame = imgui.checkbox("Update Frame", update_frame)
         vc, spp = imgui.slider_int("spp", spp, 1, 16)
         value_changed = value_changed or vc
         vc, acc = imgui.checkbox("Accumulate", acc)
@@ -78,7 +77,7 @@ def test_render(args: argparse.Namespace):
         if (acc):
             vc, stop_render_when_max_acc = imgui.checkbox("Stop Render When Max Acc", stop_render_when_max_acc)
             value_changed = value_changed or vc
-            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 100)
+            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 1000)
             if (vc):
                 # force update frame, as we stop update frame when max_acc is reached
                 update_frame = True
@@ -103,13 +102,13 @@ def test_render(args: argparse.Namespace):
         if (vc):
             if denoise_on:
                 if denoise_task is None:
-                    denoise_task = Filters(ui)
+                    denoise_task: FilterTasks = FilterTasks(ui)
                 ui.set_compute_task(denoise_task, False)
             else:
                 ui.set_compute_task(None, False)
         if (ui.compute_task != None):
             ui.compute_task.set(use_tonemapping=use_tonemapping)
-            ui.compute_task.render_ui()
+            _ = ui.compute_task.render_ui()
         value_changed = value_changed or vc
 
         vc2x, set2x = imgui.checkbox("Set 2x", set2x)
@@ -130,7 +129,8 @@ def test_render(args: argparse.Namespace):
         imgui.text("Original Size: {} x {}".format(*size_ori))
         imgui.text("Render Size: {} x {}".format(*size_render))
 
-        if (value_changed or update_frame):
+        update_frame = update_frame or value_changed
+        if (update_frame):
             img = mi.render(scene=scene, spp=spp, seed=seed, integrator=integrator)
             img = img.torch()
 
@@ -142,6 +142,7 @@ def test_render(args: argparse.Namespace):
                     img_acc = img_acc + img[::, ::, 0:3:1]
                     num_acc += 1
                 else:
+                    # TODO: bug?
                     # save compute resource
                     update_frame = False or not stop_render_when_max_acc
                 img[::, ::, 0:3:1] = img_acc / num_acc

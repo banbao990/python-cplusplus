@@ -3,7 +3,7 @@ from OpenGL.GL.ARB.pixel_buffer_object import *
 
 import os
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-SHADER_DIR = os.path.join(CURRENT_DIR, '../../../resources/shaders')
+SHADER_DIR = os.path.join(CURRENT_DIR, '../../../assets/shaders')
 
 
 class OpenGLHelper(object):
@@ -48,9 +48,38 @@ class OpenGLHelper(object):
 
     @staticmethod
     def create_compute_program(shader_path):
-        shader_source = OpenGLHelper.load_shader_file(shader_path)
+        shader_str = OpenGLHelper.load_shader_file(shader_path)
+        return OpenGLHelper.create_compute_program_from_str(shader_str)
+
+    @staticmethod
+    def create_spv_compute_program(shader_path):
+        # https://www.khronos.org/opengl/wiki/SPIR-V#SPIR-V_extensions
+        # read binary spv file
+        path = os.path.join(SHADER_DIR, shader_path)
+        shader_bin = None
+        with open(path, 'rb') as f:
+            shader_bin = f.read()
+
         shader = glCreateShader(GL_COMPUTE_SHADER)
-        glShaderSource(shader, shader_source)
+        glShaderBinary(1, [shader], GL_SHADER_BINARY_FORMAT_SPIR_V, shader_bin, len(shader_bin))
+        glSpecializeShader(shader, "main", 0, None, None)
+        if (glGetShaderiv(shader, GL_COMPILE_STATUS) != GL_TRUE):
+            err_str = glGetShaderInfoLog(shader)
+            OpenGLHelper.print_error("[spv shader] :{}".format(err_str.decode()))
+
+        program = glCreateProgram()
+        glAttachShader(program, shader)
+        glLinkProgram(program)
+        OpenGLHelper.check_compile_status(program, False)
+        # delete the shaders as they're linked into our program now and no longer necessary
+        glDeleteShader(shader)
+
+        return program
+
+    @staticmethod
+    def create_compute_program_from_str(shader_str: str):
+        shader = glCreateShader(GL_COMPUTE_SHADER)
+        glShaderSource(shader, shader_str)
         glCompileShader(shader)
         OpenGLHelper.check_compile_status(shader, True)
 

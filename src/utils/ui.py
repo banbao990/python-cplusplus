@@ -147,14 +147,16 @@ class UI:
     def create_texture(self, width, height):
 
         texture = glGenTextures(1)
-        glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, None)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1)        
+        # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, None)
+        glTexStorage2D(GL_TEXTURE_2D, 2, GL_RGBA32F, width, height)  # mipmap levels = 1
+        # glGenerateMipmap(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, 0)
 
         return texture
@@ -180,6 +182,7 @@ class UI:
 
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, img)
+        glGenerateMipmap(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, 0)
 
     # img: (height, width, 3) torch.float32
@@ -202,6 +205,7 @@ class UI:
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, int(self.pbo))
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, ctypes.c_void_p(0))
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+        glGenerateMipmap(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, 0)
 
     def end_frame(self):
@@ -225,7 +229,7 @@ class UI:
         else:
             glBindTexture(GL_TEXTURE_2D, self.texture)
         glBindImageTexture(0, self.texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F)
-        glUniform1i(glGetUniformLocation(self.program, "Image"), 0)
+        glUniform1i(glGetUniformLocation(self.program, "Image"), 0)  # binding in shader needs ogl420
 
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 6)

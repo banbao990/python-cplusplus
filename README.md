@@ -41,12 +41,12 @@ undefined symbol:
   _ZN3c106detail14torchCheckFailEPKcS2_jRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ```
 
-|   module    |    window    |    Linux     |                备注                 |
-| :---------: | :----------: | :----------: | :---------------------------------: |
-| cmake_optix | $\checkmark$ |              | 安装执行<br />（更新见 setup 版本） |
-| setup_optix | $\checkmark$ | $\checkmark$ |              安装执行               |
-| setup-oidn  | $\checkmark$ | $\checkmark$ |              安装执行               |
-|  setup-NIS  |              |              |  安装执行<br />Nvidia Image Scale   |
+|                     module                      |    window    |    Linux     |                备注                 |
+| :---------------------------------------------: | :----------: | :----------: | :---------------------------------: |
+|                   cmake_optix                   | $\checkmark$ |              | 安装执行<br />（更新见 setup 版本） |
+|                   setup_optix                   | $\checkmark$ | $\checkmark$ |              安装执行               |
+|                   setup-oidn                    | $\checkmark$ | $\checkmark$ |              安装执行               |
+| [simpile_denoise](src/simple_denoise/README.md) | $\checkmark$ |              |              安装执行               |
 
 + 测试环境
   + windows

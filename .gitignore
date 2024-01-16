@@ -1,5 +1,7 @@
 build
 .vscode/settings.json
+.vscode/launch.json
+
 __pycache__
 log.txt
 .vs
@@ -14,5 +16,8 @@ src/cmake_oidn/weights/
 src/setup_oidn/oidn
 
 assets/ignore/
+# assets/shaders/**/generated
+
 imgui.ini
 results/
+
