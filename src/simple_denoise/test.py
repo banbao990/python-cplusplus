@@ -56,7 +56,6 @@ def test_render(args: argparse.Namespace):
     denoise_task = None
 
     scale = 1.0
-    set2x = False
     scene_params = mi.traverse(scene)
     size_ori = (width, height)
     size_render = size_ori
@@ -111,20 +110,19 @@ def test_render(args: argparse.Namespace):
             _ = ui.compute_task.render_ui()
         value_changed = value_changed or vc
 
-        vc2x, set2x = imgui.checkbox("Set 2x", set2x)
-        if set2x:
+        vc1 = imgui.button("Set 2x")
+        if vc1:
             scale = 0.5
-        value_changed = value_changed or vc2x
 
-        vc, scale = imgui.slider_float("Scale", scale, 0.1, 1.0)
+        vc2, scale = imgui.slider_float("Scale", scale, 0.1, 1.0)
 
-        if vc or vc2x:
+        if vc1 or vc2:
             size_render = [int(scale * i) for i in size_ori]
             scene_params["PerspectiveCamera.film.size"] = size_render
             scene_params.update()
             num_acc = 0
             img_acc = None
-        value_changed = value_changed or vc
+            value_changed = True
 
         imgui.text("Original Size: {} x {}".format(*size_ori))
         imgui.text("Render Size: {} x {}".format(*size_render))

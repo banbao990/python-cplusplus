@@ -128,9 +128,6 @@ class NIS(object):
         return cbuf
 
     def create_programs(self):
-        # TODO: add spv compile
-        # TODO: read optimal params ac the NIS_Config.h tells
-
         sharpen_program = None
         scaler_program = None
 

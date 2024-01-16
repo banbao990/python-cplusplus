@@ -16,7 +16,7 @@ src/cmake_oidn/weights/
 src/setup_oidn/oidn
 
 assets/ignore/
-# assets/shaders/**/generated
+assets/shaders/**/generated
 
 imgui.ini
 results/
