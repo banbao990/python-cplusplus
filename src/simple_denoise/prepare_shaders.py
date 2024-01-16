@@ -30,7 +30,6 @@ def generate_OpenGL_shaders():
     shader_gen_dir = os.path.join(shader_src_dir, "generated/")
 
     if not in_path and cfg.VK_PATH == "":
-        # TODO: use default shader
         print("\033[93m[Warning]\033[00m: vulkan sdk not found, just use the default shader instead!")
         print("\033[93m[Warning]\033[00m: you can set the path of vulkan sdk in 'src/config.py', or you can add glslc to your PATH")
         print("\033[93m[Config]\033[00m: OptimalBlockWidth: 32, OptimalBlockHeight: 24, OptimalThreadGroupSize: 128")

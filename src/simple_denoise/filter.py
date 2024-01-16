@@ -179,7 +179,6 @@ class FilterTasks(ComputeTask):
             ktv: int = self.kernel_type.value
             vc, ktv = imgui.combo("kernel type", ktv, self.TYPES)
             self.kernel_type = KernelType(ktv)
-            # TODO: maybe need to change texture size(NIS is not same size as input)
             value_changed = value_changed or vc
 
             if self.need_kernel_size[ktv]:
