@@ -45,9 +45,9 @@ class UI:
             print("Failed to initialize GLFW")
             exit()
 
-        # for compute shader test
+        # for compute shader test >= 4.3
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
-        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 5)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
         window = glfw.create_window(width, height, name, None, None)

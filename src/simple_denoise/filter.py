@@ -223,8 +223,8 @@ class FilterTasks(ComputeTask):
         self.use_tonemapping = kwargs.get('use_tonemapping', False)
 
     def render_ui(self):
-        if self.kernel_type != KernelType.NIS or not self.nis_task.is_NV_scaler():
-            self.output_tex_size_same_with_window = False
+        # if self.kernel_type != KernelType.NIS or not self.nis_task.is_NV_scaler():
+        self.output_tex_size_same_with_window = False
         value_changed = False
         if imgui.tree_node(self.name, imgui.TREE_NODE_DEFAULT_OPEN):
             ktv: int = self.kernel_type.value
@@ -315,9 +315,10 @@ class FilterTasks(ComputeTask):
                 glDeleteBuffers(1, [self.depth_texture_pbo])
             self.depth_texture_pbo, self.depth_texture_pbo_buf = self.create_pbo_and_buf(*self.physical_texture_size, GL_R32F)
 
-    def record_depth(self, depth):
-        min_depth, max_depth = depth.min(), depth.max()
-        depth = (depth - min_depth) / (max_depth - min_depth)
+    def record_depth(self, depth, should_normalize=True):
+        if (should_normalize):
+            min_depth, max_depth = depth.min(), depth.max()
+            depth = (depth - min_depth) / (max_depth - min_depth)
 
         if (self.depth_texture is None):
             self.create_depth_texture()

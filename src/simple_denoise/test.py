@@ -8,11 +8,12 @@ import sys
 import time
 import mitsuba as mi
 from datetime import datetime
-
+import torch
+import numpy as np
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CURRENT_DIR, "../"))
-from utils.images import tonemap_aces
+from utils.images import tonemap_aces, read_exr, read_png
 from utils.ogl.gl_helper import OpenGLHelper as glh
 from simple_denoise.filter import FilterTasks
 from utils.ui import UI
@@ -24,6 +25,78 @@ def save_img(img, num_acc: int = 0):
         os.makedirs(result_dir)
     timestamp = datetime.today().strftime('%Y-%m-%d-%H%M%S')
     mi.util.write_bitmap(os.path.join(result_dir, "output-{}-{}.png".format(timestamp, num_acc)), img)
+
+
+def test_ui(args: argparse.Namespace):
+    src_img = read_exr(os.path.join(CURRENT_DIR, "../../assets/images/100spp.exr"))
+    # BGR to RGB
+    src_img = src_img[::, ::, [2, 1, 0]].clone()
+    src_img_depth = torch.ones_like(src_img) * 0.5  # no depth
+    height, width, _ = src_img.shape
+
+    ui = UI(width, height, args.gpu)
+
+    denoise_on = False
+    denoise_task = None
+    use_tonemapping = True
+
+    scale = 1.0
+    size_ori = (width, height)
+    size_render = size_ori
+
+    while not ui.should_close():
+        time.sleep(1 / 60)
+        ui.begin_frame()
+        vc, use_tonemapping = imgui.checkbox("Use Tonemap", use_tonemapping)
+        vc, denoise_on = imgui.checkbox("Denoise On", denoise_on)
+        if (vc):
+            if denoise_on:
+                if denoise_task is None:
+                    denoise_task: FilterTasks = FilterTasks(ui)
+                ui.set_compute_task(denoise_task, False)
+            else:
+                ui.set_compute_task(None, False)
+        if (ui.compute_task != None):
+            ui.compute_task.set(use_tonemapping=use_tonemapping)
+            _ = ui.compute_task.render_ui()
+
+        vc1 = imgui.button("Set 2x")
+        if vc1:
+            scale = 0.5
+        vc2, scale = imgui.slider_float("Scale", scale, 0.1, 1.0)
+        if vc1 or vc2:
+            size_render = [int(scale * i) for i in size_ori]
+            ui.check_and_update_texture_size(*size_render)
+
+        imgui.text("Original Size: {} x {}".format(*size_ori))
+        imgui.text("Render Size: {} x {}".format(*size_render))
+
+        need_depth = False
+        if (denoise_on):
+            need_depth = denoise_task.need_depth()
+        if (need_depth):
+            img_depth = src_img_depth.clone()
+            denoise_task.record_depth(img_depth, False)
+
+        start_x = (width - size_render[0]) // 2
+        start_y = (height - size_render[1]) // 2
+        end_x = start_x + size_render[0]
+        end_y = start_y + size_render[1]
+        img = src_img[start_y:end_y, start_x:end_x, ::].clone()
+
+        if (use_tonemapping and not denoise_on):
+            img = tonemap_aces(img)
+
+        ui.write_texture_gpu(img)
+
+        ui.end_frame()
+
+    if denoise_task is not None:
+        denoise_task.release()
+        denoise_task = None
+        ui.set_compute_task(None, False)
+
+    ui.close()
 
 
 def test_render(args: argparse.Namespace):
@@ -194,9 +267,12 @@ def test_render(args: argparse.Namespace):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gpu", action="store_true", help="Write texture on GPU")
+    parser.add_argument("--render", action="store_true", help="Render Mode")
     parser.add_argument("--cbox", action="store_true", help="Use Cornell Box")
     args = parser.parse_args()
 
     parser.print_help()
-
-    test_render(args)
+    if (args.render):
+        test_render(args)
+    else:
+        test_ui(args)

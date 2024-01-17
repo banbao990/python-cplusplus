@@ -15,10 +15,10 @@ public:
                                 uint32_t outputViewportWidth, uint32_t outputViewportHeight,
                                 NISHDRMode hdrMode = NISHDRMode::None) {
         return NVScalerUpdateConfig(m_nis_config, sharpness,
-                                    0, 0, inputTextureWidth, inputTextureWidth,
+                                    0, 0, inputTextureWidth, inputTextureHeight,
                                     inputTextureWidth, inputTextureHeight,
                                     0, 0, outputViewportWidth, outputViewportHeight,
-                                    outputViewportWidth, outputViewportWidth,
+                                    outputViewportWidth, outputViewportHeight,
                                     hdrMode);
     }
 
@@ -26,7 +26,7 @@ public:
                                  uint32_t inputTextureWidth, uint32_t inputTextureHeight,
                                  NISHDRMode hdrMode = NISHDRMode::None) {
         return NVSharpenUpdateConfig(m_nis_config, sharpness,
-                                     0, 0, inputTextureWidth, inputTextureWidth,
+                                     0, 0, inputTextureWidth, inputTextureHeight,
                                      inputTextureWidth, inputTextureHeight,
                                      0, 0,
                                      hdrMode);
