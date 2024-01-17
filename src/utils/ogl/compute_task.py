@@ -70,3 +70,6 @@ class ComputeTaskTest(ComputeTask):
             imgui.tree_pop()
 
         return value_changed
+
+    def release(self):
+        return super().release()

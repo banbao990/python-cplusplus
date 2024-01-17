@@ -81,6 +81,8 @@ class UI:
         self.check_and_update_texture_size(width, height)
 
     def close(self):
+        if self.compute_task != None:
+            self.compute_task.release()
         if self.gpu:
             cres, = cudart.cudaGraphicsUnregisterResource(self.bufobj)
             check_cuda_error(cres)

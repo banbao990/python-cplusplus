@@ -129,8 +129,21 @@ def test_render(args: argparse.Namespace):
 
         update_frame = update_frame or value_changed
         if (update_frame):
+            need_depth = False
+            if (denoise_on):
+                need_depth = denoise_task.need_depth()
+            if (need_depth):
+                integrator = mi.load_dict({
+                    'type': 'aov',
+                    'aovs': "depth:depth",
+                    'integrator': integrator
+                })
             img = mi.render(scene=scene, spp=spp, seed=seed, integrator=integrator)
-            img = img.torch()
+
+            if (need_depth):
+                denoise_task.record_depth(img[::, ::, 3:4:1].torch())
+
+            img = img[::, ::, 0:3:1].torch()
 
             if (acc):
                 if (img_acc == None):
@@ -159,6 +172,7 @@ def test_render(args: argparse.Namespace):
     if denoise_task is not None:
         denoise_task.release()
         denoise_task = None
+        ui.set_compute_task(None, False)
 
     ui.close()
 

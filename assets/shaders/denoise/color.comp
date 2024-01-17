@@ -136,12 +136,8 @@ void main() {
     vec3 value = vec3(0.0, 0.0, 0.0);
     // Kernel
     {
-        // None
-        if (g_kernel_type == 0) {
-            value = IMAGE_LOAD(img_input, texel_coord);
-        }
         // Average
-        else if (g_kernel_type == 1) {
+        if (g_kernel_type == 1) {
             value = average_filter(texel_coord);
         }
         // Gaussian
@@ -151,6 +147,11 @@ void main() {
         // Median
         else if (g_kernel_type == 3) {
             value = median_filter(texel_coord);
+        }
+        // None
+        else {
+            // g_kernel_type == 0
+            value = IMAGE_LOAD(img_input, texel_coord);
         }
     }
 

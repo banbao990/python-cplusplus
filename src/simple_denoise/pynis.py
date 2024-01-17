@@ -168,3 +168,10 @@ class NIS(object):
     def resize(self, width, height):
         self.input_size = [width, height]
         self.should_update_config = True
+
+    def release(self):
+        glDeleteBuffers(1, [self.nis_params_cbuf])
+        glDeleteTextures(1, [self.coef_scale_fp16_texture])
+        glDeleteTextures(1, [self.coef_usm_fp16_texture])
+        glDeleteProgram(self.shapern_program)
+        glDeleteProgram(self.scaler_program)

@@ -17,10 +17,11 @@ from simple_denoise.pynis import NIS
 
 class KernelType(Enum):
     NONE = 0
-    AVERAGE = 1
+    Average = 1
     GAUSSIAN = 2
     MEDIAN = 3
     NIS = 4
+    Bilateral = 5
 
 
 class FilterTasks(ComputeTask):
@@ -32,8 +33,8 @@ class FilterTasks(ComputeTask):
         super().__init__(self.name, "denoise/color.comp")
 
         self.TYPES = [str(i) for i in KernelType.__members__]
-        # self.TYPES = [(i[0].upper() + i[1:].lower()) for i in self.TYPES]
-        self.need_kernel_size = [False, True, False, True, False]
+        self.TYPES = [(i[0].upper() + i[1:].lower()) for i in self.TYPES]
+        self.need_kernel_size = [False, True, False, True, False, False]
 
         self.kernel_type: KernelType = KernelType.NONE
         self.kernel_size = 3
@@ -49,6 +50,8 @@ class FilterTasks(ComputeTask):
         self.texture_size = ui.texture_size
         self.physical_texture_size = ui.texture_size  # real texture size
         self.output_texture = self.create_texture(*ui.texture_size)
+
+        self.depth_texture = None
 
     def get_name(self):
         return self.name
@@ -73,13 +76,20 @@ class FilterTasks(ComputeTask):
         return texture
 
     def run(self, **kwargs):
-        if self.kernel_type != KernelType.NIS:
-            self.run_normal(**kwargs)
-        elif self.nis_task.is_bilinear():
-            # bilinear
-            self.run_normal(**kwargs)
-        else:
-            self.run_nis(**kwargs)
+        if self.kernel_type == KernelType.NIS:
+            if not self.nis_task.is_bilinear():
+                self.run_nis(**kwargs)
+                return
+            else:
+                pass
+        elif self.kernel_type == KernelType.Bilateral:
+            self.run_depth(**kwargs)
+
+        self.run_normal(**kwargs)
+
+    def run_depth(self, **kwargs):
+        # TODO
+        self.run_normal(**kwargs)
 
     def run_normal(self, **kwargs):
         group_size = kwargs.get('group_size')
@@ -222,6 +232,18 @@ class FilterTasks(ComputeTask):
 
         self.physical_texture_size = new_size
 
-        if self.output_texture is not None:
-            glDeleteTextures(1, [self.output_texture])
+        glDeleteTextures(1, [self.output_texture])
         self.output_texture = self.create_texture(*new_size)
+
+    def need_depth(self):
+        return self.kernel_type == KernelType.Bilateral
+
+    def record_depth(self, depth):
+        # TODO
+        pass
+
+    def release(self):
+        glDeleteTextures(1, [self.output_texture])
+        if self.nis_task is not None:
+            self.nis_task.release()
+        super().release()
