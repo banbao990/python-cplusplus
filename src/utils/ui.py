@@ -333,9 +333,16 @@ def test_render(args: argparse.Namespace):
     acc = False
     img_acc = None
     num_acc = 0
+    max_acc = 0
+    stop_render_when_max_acc = True
     use_tonemapping = True
     scale = 1.0
     scene_params = mi.traverse(scene)
+    film_size_key: str = None
+    for k in scene_params.keys():
+        if k.endswith("film.size"):
+            film_size_key = k
+            break
     size_ori = (width, height)
     size_render = size_ori
     compute_task_test = False
@@ -345,21 +352,30 @@ def test_render(args: argparse.Namespace):
             time.sleep(1 / 60)
         ui.begin_frame()
         value_changed = False
-        vc, update_frame = imgui.checkbox("Update Frame", update_frame)
-        value_changed = value_changed or vc
+        _, update_frame = imgui.checkbox("Update Frame", update_frame)
         vc, spp = imgui.slider_int("spp", spp, 1, 16)
         value_changed = value_changed or vc
         vc, acc = imgui.checkbox("Accumulate", acc)
         if (vc):
             num_acc = 0
             img_acc = None
-        imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
         value_changed = value_changed or vc
+        if (acc):
+            vc, stop_render_when_max_acc = imgui.checkbox("Stop Render When Max Acc", stop_render_when_max_acc)
+            value_changed = value_changed or vc
+            vc, max_acc = imgui.slider_int("Max Accumulate", max_acc, 0, 500)
+            if (vc):
+                # force update frame, as we stop update frame when max_acc is reached
+                update_frame = True
+                num_acc = 0
+                img_acc = None
+            value_changed = value_changed or vc
+            imgui.text_ansi("Accumulate Frames: {}".format(num_acc + 1))
 
         integrator = scene.integrator()
         vc, use_same_seed = imgui.checkbox("Use Same Seed", use_same_seed)
         value_changed = value_changed or vc
-        seed = index
+        seed = index + int(time.time())
         if (vc):
             same_seed = seed
         if (use_same_seed):
@@ -374,9 +390,10 @@ def test_render(args: argparse.Namespace):
                 ui.compute_task_test()
             else:
                 ui.set_compute_task(None)
-        if (ui.compute_task != None):
-            ui.compute_task.render_ui()
         value_changed = value_changed or vc
+        if (ui.compute_task != None):
+            vc = ui.compute_task.render_ui()
+            value_changed = value_changed or vc
 
         vc1 = imgui.button("Set 2x")
         if vc1:
@@ -386,8 +403,9 @@ def test_render(args: argparse.Namespace):
 
         if vc1 or vc2:
             size_render = [int(scale * i) for i in size_ori]
-            scene_params["PerspectiveCamera.film.size"] = size_render
+            scene_params[film_size_key] = size_render
             scene_params.update()
+            ui.check_and_update_texture_size(*size_render)
             num_acc = 0
             img_acc = None
             value_changed = True
@@ -398,19 +416,24 @@ def test_render(args: argparse.Namespace):
         if (imgui.button("Check OpenGL Infos")):
             ui.print_opengl_infos()
 
-        if (value_changed or update_frame):
-            img = mi.render(scene=scene, spp=spp, seed=seed,
-                            integrator=integrator)
+        update_frame = update_frame or value_changed
+        if (update_frame):
+            img = mi.render(scene=scene, spp=spp, seed=seed, integrator=integrator)
 
             img = img.torch()
 
             if (acc):
                 if (img_acc == None):
-                    img_acc = img[::, ::, 0:3:1]
+                    img_acc = img.clone()
+                    num_acc = 1
+                elif (max_acc == 0 or (num_acc + 1 < max_acc)):
+                    img_acc = img_acc + img
+                    num_acc += 1
                 else:
-                    img_acc = img_acc + img[::, ::, 0:3:1]
-                num_acc += 1
-                img[::, ::, 0:3:1] = img_acc / num_acc
+                    # TODO: bug?
+                    # save compute resource
+                    update_frame = False or not stop_render_when_max_acc
+                img = img_acc / num_acc
 
             if save:
                 save_img(img, num_acc)

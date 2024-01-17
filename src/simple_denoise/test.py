@@ -221,7 +221,6 @@ def test_render(args: argparse.Namespace):
                 need_depth = denoise_task.need_depth()
             if (need_depth):
                 img_depth = mi.render(scene=scene, spp=1, seed=seed, integrator=depth_integrator)
-                # TODO?: return a 3 channel image, but all channels are the same
                 denoise_task.record_depth(img_depth[::, ::, 0].torch())
 
             img = mi.render(scene=scene, spp=spp, seed=seed, integrator=integrator)

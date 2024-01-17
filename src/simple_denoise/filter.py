@@ -19,11 +19,11 @@ from simple_denoise.pynis import NIS
 
 class KernelType(Enum):
     NONE = 0
-    Average = 1
+    AVERAGE = 1
     GAUSSIAN = 2
     MEDIAN = 3
     NIS = 4
-    Bilateral = 5
+    BILATERAL = 5
     Depth = 6
 
 
@@ -68,14 +68,14 @@ class FilterTasks(ComputeTask):
         self.need_kernel_size = [False] * len(self.TYPES)
         self.need_sigma = [False] * len(self.TYPES)
 
-        ktv = KernelType.Average.value
+        ktv = KernelType.AVERAGE.value
         self.need_kernel_size[ktv] = True
         ktv = KernelType.GAUSSIAN.value
         self.need_sigma[ktv] = True
         ktv = KernelType.MEDIAN.value
         self.need_kernel_size[ktv] = True
         # ktv = KernelType.NIS.value
-        ktv = KernelType.Bilateral.value
+        ktv = KernelType.BILATERAL.value
         self.need_sigma[ktv] = True
         # ktv = KernelType.Depth.value
 
@@ -244,7 +244,7 @@ class FilterTasks(ComputeTask):
                 vc, self.sigma = imgui.slider_float("sigma", self.sigma, 0.1, 5.0)
                 imgui.text_ansi("2 sigma: kernel size = {}".format(int(np.ceil(self.sigma * 2))))
                 value_changed = value_changed or vc
-            if self.kernel_type == KernelType.Bilateral:
+            if self.kernel_type == KernelType.BILATERAL:
                 vc, self.value_sigma = imgui.slider_float("value sigma", self.value_sigma, 0.1, 5.0)
                 imgui.text_ansi("2 sigma: kernel size = {}".format(int(np.ceil(self.value_sigma * 2))))
                 imgui.text_ansi("final kernel size = {}".format(int(np.ceil(max(self.sigma, self.value_sigma) * 2))))
