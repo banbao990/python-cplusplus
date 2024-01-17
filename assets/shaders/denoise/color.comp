@@ -27,6 +27,7 @@ layout(r32f, location = 4, binding = 2) uniform image2D img_input_depth;
 #define g_kernel_size v1.x
 #define g_kernel_type v1.y
 #define g_use_tonemapping v1.z
+#define g_depth_weight v1.w
 
 #define g_sigma v2.x
 #define g_v_sigma v2.y
@@ -85,7 +86,7 @@ vec3 gaussian_filter(ivec2 texel_coord) {
                 continue;
             }
             float weight = exp(-(float(i * i + j * j)) / div);
-            value += IMAGE_LOAD(img_input, texel_coord + ivec2(i, j)) * weight;
+            value += IMAGE_LOAD(img_input, coord) * weight;
             weight_sum += weight;
         }
     }
@@ -152,7 +153,7 @@ vec3 bilateral_filter(ivec2 texel_coord) {
                 continue;
             }
             float weight = exp(-(float(i * i + j * j)) / div);
-            vec3 val = IMAGE_LOAD(img_input, texel_coord + ivec2(i, j));
+            vec3 val = IMAGE_LOAD(img_input, coord);
             vec3 val_diff = val - val_center;
             float weight2 = exp(-(dot(val_diff, val_diff)) / v_div);
             value += weight * weight2 * val;

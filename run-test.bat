@@ -3,3 +3,4 @@
 
 @REM Simple Denoise Test
 python src/simple_denoise/test.py --gpu
+@REM python src/simple_denoise/test.py --gpu --cbox

@@ -29,12 +29,19 @@ def save_img(img, num_acc: int = 0):
 def test_render(args: argparse.Namespace):
     mi.set_variant("cuda_ad_rgb")
 
-    scene_file = os.path.join(CURRENT_DIR, "../../assets/ignore/scenes/veach-bidir/scene.xml")
-    if (not os.path.exists(scene_file)):
-        print("\033[91mScene File Not Found, Please Run 'python prepare.py' in the root dir\033[0m")
-        exit(-1)
+    scene: mi.Scene = None
+    if args.cbox:
+        cbox = mi.cornell_box()
+        cbox["sensor"]["film"]["width"] = 1024
+        cbox["sensor"]["film"]["height"] = 1024
+        scene = mi.load_dict(cbox)
+    else:
+        scene_file = os.path.join(CURRENT_DIR, "../../assets/ignore/scenes/veach-bidir/scene.xml")
+        if (not os.path.exists(scene_file)):
+            print("\033[91mScene File Not Found, Please Run 'python prepare.py' in the root dir\033[0m")
+            exit(-1)
+        scene = mi.load_file(scene_file)
 
-    scene: mi.Scene = mi.load_file(scene_file)
     width, height = scene.sensors()[0].film().size()
 
     ui = UI(width, height, args.gpu)
@@ -58,6 +65,11 @@ def test_render(args: argparse.Namespace):
 
     scale = 1.0
     scene_params = mi.traverse(scene)
+    film_size_key: str = None
+    for k in scene_params.keys():
+        if k.endswith("film.size"):
+            film_size_key = k
+            break
     size_ori = (width, height)
     size_render = size_ori
 
@@ -119,7 +131,7 @@ def test_render(args: argparse.Namespace):
 
         if vc1 or vc2:
             size_render = [int(scale * i) for i in size_ori]
-            scene_params["PerspectiveCamera.film.size"] = size_render
+            scene_params[film_size_key] = size_render
             scene_params.update()
             ui.check_and_update_texture_size(*size_render)
             num_acc = 0
@@ -182,6 +194,7 @@ def test_render(args: argparse.Namespace):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gpu", action="store_true", help="Write texture on GPU")
+    parser.add_argument("--cbox", action="store_true", help="Use Cornell Box")
     args = parser.parse_args()
 
     parser.print_help()

@@ -37,7 +37,9 @@ class FilterTasks(ComputeTask):
 
         self.TYPES = [str(i) for i in KernelType.__members__]
         self.TYPES = [(i[0].upper() + i[1:].lower()) for i in self.TYPES]
-        self.need_kernel_size = [False, True, False, True, False, False, False]
+        self.need_kernel_size: list = None
+        self.need_sigma: list = None
+        self.create_configs()
 
         self.kernel_type: KernelType = KernelType.NONE
         self.kernel_size = 3
@@ -60,6 +62,22 @@ class FilterTasks(ComputeTask):
         self.depth_texture = None
         self.depth_texture_pbo = None
         self.depth_texture_pbo_buf = None
+
+    def create_configs(self):
+        # need_kernel_size, need_sigma
+        self.need_kernel_size = [False] * len(self.TYPES)
+        self.need_sigma = [False] * len(self.TYPES)
+
+        ktv = KernelType.Average.value
+        self.need_kernel_size[ktv] = True
+        ktv = KernelType.GAUSSIAN.value
+        self.need_sigma[ktv] = True
+        ktv = KernelType.MEDIAN.value
+        self.need_kernel_size[ktv] = True
+        # ktv = KernelType.NIS.value
+        ktv = KernelType.Bilateral.value
+        self.need_sigma[ktv] = True
+        # ktv = KernelType.Depth.value
 
     def get_name(self):
         return self.name
@@ -137,7 +155,7 @@ class FilterTasks(ComputeTask):
             glBindTexture(GL_TEXTURE_2D, self.depth_texture)
             glBindImageTexture(2, self.depth_texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F)  # binding = 2
         ktv = self.kernel_type.value
-        if (self.nis_task is not None) and (self.nis_task.is_bilinear()):
+        if (self.kernel_type == KernelType.NIS) and (self.nis_task is not None) and (self.nis_task.is_bilinear()):
             ktv = KernelType.NONE.value
         glUniform4i(glGetUniformLocation(self.program, "v1"), self.kernel_size, ktv, self.use_tonemapping, 0)
         glUniform4f(glGetUniformLocation(self.program, "v2"), self.sigma, self.value_sigma, 0.0, 0.0)
@@ -222,14 +240,14 @@ class FilterTasks(ComputeTask):
                 if self.kernel_type == KernelType.MEDIAN:
                     imgui.text_ansi("Median Filter is Slow! Bubble Sort! Max Kernel Size = 9")
 
-            if self.kernel_type == KernelType.GAUSSIAN or self.kernel_type == KernelType.Bilateral:
+            if self.need_sigma[ktv]:
                 vc, self.sigma = imgui.slider_float("sigma", self.sigma, 0.1, 5.0)
                 imgui.text_ansi("2 sigma: kernel size = {}".format(int(np.ceil(self.sigma * 2))))
                 value_changed = value_changed or vc
             if self.kernel_type == KernelType.Bilateral:
                 vc, self.value_sigma = imgui.slider_float("value sigma", self.value_sigma, 0.1, 5.0)
                 imgui.text_ansi("2 sigma: kernel size = {}".format(int(np.ceil(self.value_sigma * 2))))
-                imgui.text_ansi("final kernel size will be max of them")
+                imgui.text_ansi("final kernel size = {}".format(int(np.ceil(max(self.sigma, self.value_sigma) * 2))))
                 value_changed = value_changed or vc
             elif self.kernel_type == KernelType.NIS:
                 if self.nis_task is None:
