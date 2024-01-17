@@ -54,6 +54,7 @@ def test_render(args: argparse.Namespace):
     use_tonemapping = True
     denoise_on = False
     denoise_task = None
+    depth_integrator = mi.load_dict({'type': 'depth'})
 
     scale = 1.0
     scene_params = mi.traverse(scene)
@@ -120,6 +121,7 @@ def test_render(args: argparse.Namespace):
             size_render = [int(scale * i) for i in size_ori]
             scene_params["PerspectiveCamera.film.size"] = size_render
             scene_params.update()
+            ui.check_and_update_texture_size(*size_render)
             num_acc = 0
             img_acc = None
             value_changed = True
@@ -133,30 +135,26 @@ def test_render(args: argparse.Namespace):
             if (denoise_on):
                 need_depth = denoise_task.need_depth()
             if (need_depth):
-                integrator = mi.load_dict({
-                    'type': 'aov',
-                    'aovs': "depth:depth",
-                    'integrator': integrator
-                })
+                img_depth = mi.render(scene=scene, spp=1, seed=seed, integrator=depth_integrator)
+                # TODO?: return a 3 channel image, but all channels are the same
+                denoise_task.record_depth(img_depth[::, ::, 0].torch())
+
             img = mi.render(scene=scene, spp=spp, seed=seed, integrator=integrator)
 
-            if (need_depth):
-                denoise_task.record_depth(img[::, ::, 3:4:1].torch())
-
-            img = img[::, ::, 0:3:1].torch()
+            img = img.torch()
 
             if (acc):
                 if (img_acc == None):
-                    img_acc = img[::, ::, 0:3:1]
+                    img_acc = img.clone()
                     num_acc = 1
                 elif (max_acc == 0 or (num_acc + 1 < max_acc)):
-                    img_acc = img_acc + img[::, ::, 0:3:1]
+                    img_acc = img_acc + img
                     num_acc += 1
                 else:
                     # TODO: bug?
                     # save compute resource
                     update_frame = False or not stop_render_when_max_acc
-                img[::, ::, 0:3:1] = img_acc / num_acc
+                img = img_acc / num_acc
 
             if save:
                 save_img(img, num_acc)

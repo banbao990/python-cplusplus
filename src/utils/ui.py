@@ -155,7 +155,7 @@ class UI:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1)        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1)
         # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, None)
         glTexStorage2D(GL_TEXTURE_2D, 2, GL_RGBA32F, width, height)  # mipmap levels = 1
         # glGenerateMipmap(GL_TEXTURE_2D)
@@ -180,8 +180,6 @@ class UI:
 
     # img: (height, width, 3) np.float32
     def write_texture_cpu(self, img):
-        self.check_and_update_texture_size(img.shape[1], img.shape[0])
-
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.texture_size[0], self.texture_size[1], GL_RGB, GL_FLOAT, img)
         glGenerateMipmap(GL_TEXTURE_2D)
@@ -193,7 +191,6 @@ class UI:
             self.write_texture_cpu(img.cpu().numpy())
             return
 
-        self.check_and_update_texture_size(img.shape[1], img.shape[0])
         cres, = cudart.cudaGraphicsMapResources(1, self.bufobj, 0)
         check_cuda_error(cres)
         cres, ptr, size = cudart.cudaGraphicsResourceGetMappedPointer(self.bufobj)
